@@ -1,6 +1,6 @@
 package com.github.inet.resource;
 
-import com.github.inet.resource.common.MetadataProtos.Metadata;
+import com.github.inet.common.MetadataProtos.Metadata;
 
 import static com.google.common.base.Preconditions.*;
 

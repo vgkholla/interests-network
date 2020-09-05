@@ -1,6 +1,6 @@
 package com.github.inet.resource.group;
 
-import com.github.inet.resource.entities.GroupProtos;
+import com.github.inet.entities.GroupProtos;
 import com.google.protobuf.util.JsonFormat;
 
 

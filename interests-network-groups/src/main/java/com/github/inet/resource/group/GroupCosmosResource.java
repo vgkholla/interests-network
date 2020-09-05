@@ -10,7 +10,7 @@ import com.github.inet.resource.DeleteRequestOptions;
 import com.github.inet.resource.GetRequestOptions;
 import com.github.inet.resource.Resource;
 import com.github.inet.resource.UpsertRequestOptions;
-import com.github.inet.resource.entities.GroupProtos.Group;
+import com.github.inet.entities.GroupProtos.Group;
 import com.github.inet.resource.storage.cosmos.CosmosDBQuery;
 import com.google.common.collect.Iterables;
 import java.util.Collections;

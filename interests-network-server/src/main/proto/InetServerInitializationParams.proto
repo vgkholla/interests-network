@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package inet;
+
+option java_package = "com.github.inet.server";
+option java_outer_classname = "InetServerInitializationParamsProtos";
+
+message InetServerInitializationParams {
+    CosmosDBConfiguration cosmosDBConfiguration = 1;
+}
+
+message CosmosDBConfiguration {
+  string cosmosDBAccountEndpoint = 1;
+
+  string cosmosDBAccountKey = 2;
+
+  repeated string preferredRegions = 3;
+}

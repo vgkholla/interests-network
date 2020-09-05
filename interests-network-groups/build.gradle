@@ -1,0 +1,11 @@
+plugins {
+  id 'java-library'
+}
+
+dependencies {
+  api project(':interests-network-models')
+  api project(':interests-network-api')
+  api 'com.azure:azure-cosmos:4.0.1'
+  implementation project(':interests-network-storage')
+  implementation 'com.google.protobuf:protobuf-java-util:3.11.0'
+}

@@ -1,0 +1,19 @@
+plugins {
+  id "com.gradle.enterprise" version "3.4.1"
+}
+
+gradleEnterprise {
+  buildScan {
+    termsOfServiceUrl = 'https://gradle.com/terms-of-service'
+    termsOfServiceAgree = 'yes'
+  }
+}
+
+rootProject.name = 'interests-network'
+include 'interests-network-server'
+include 'interests-network-storage'
+include 'interests-network-groups'
+include 'interests-network-models'
+include 'interests-network-api'
+include 'interests-network-impl'
+

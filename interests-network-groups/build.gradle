@@ -3,9 +3,12 @@ plugins {
 }
 
 dependencies {
-  api project(':interests-network-models')
-  api project(':interests-network-api')
   api 'com.azure:azure-cosmos:4.0.1'
-  implementation project(':interests-network-storage')
+  api project(':interests-network-api')
+  api project(':interests-network-models')
+
   implementation 'com.google.protobuf:protobuf-java-util:3.11.0'
+  implementation project(':interests-network-common')
+  implementation project(':interests-network-impl')
+  implementation project(':interests-network-storage')
 }

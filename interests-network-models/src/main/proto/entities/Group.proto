@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package inet;
+package entities;
 
 option java_package = "com.github.inet.entities";
 option java_outer_classname = "GroupProtos";

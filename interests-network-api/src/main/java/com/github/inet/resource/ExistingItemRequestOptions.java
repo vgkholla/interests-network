@@ -1,9 +1,10 @@
 package com.github.inet.resource;
 
-import com.github.inet.common.MetadataProtos.Metadata;
+import com.github.inet.storage.StorageMetadataProtos;
+import com.github.inet.storage.StorageMetadataProtos.StorageMetadata;
 
 
 public interface ExistingItemRequestOptions {
 
-  Metadata getMetadata();
+  StorageMetadata getMetadata();
 }

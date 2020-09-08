@@ -1,4 +1,4 @@
-package com.github.inet.resource.storage.cosmos;
+package com.github.inet.storage.cosmos;
 
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.implementation.CosmosItemProperties;

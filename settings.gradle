@@ -16,4 +16,4 @@ include 'interests-network-groups'
 include 'interests-network-models'
 include 'interests-network-api'
 include 'interests-network-impl'
-
+include 'interests-network-common'

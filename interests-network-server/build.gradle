@@ -14,7 +14,7 @@ plugins {
 
 application {
   // Define the main class for the application.
-  mainClassName = 'com.github.inet.InetServer'
+  mainClassName = 'com.github.inet.server.InetDemo'
 }
 
 dependencies {

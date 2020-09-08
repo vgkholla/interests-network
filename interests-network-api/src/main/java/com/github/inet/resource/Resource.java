@@ -5,11 +5,11 @@ import java.util.Optional;
 
 public interface Resource<K, V> {
 
-  Optional<V> get(K key, GetRequestOptions options);
+  ResourceResponse<Optional<V>> get(K key, GetRequestOptions options);
 
-  boolean create(V payload, CreateRequestOptions options);
+  ResourceResponse<Boolean> create(V payload, CreateRequestOptions options);
 
-  boolean upsert(V payload, UpsertRequestOptions options);
+  ResourceResponse<Boolean> update(V payload, UpdateRequestOptions options);
 
-  boolean delete(K key, DeleteRequestOptions options);
+  ResourceResponse<DeleteStatus> delete(K key, DeleteRequestOptions options);
 }

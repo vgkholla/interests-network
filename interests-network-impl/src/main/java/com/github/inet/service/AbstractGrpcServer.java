@@ -48,7 +48,7 @@ public abstract class AbstractGrpcServer implements StartStopService {
         _server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
         LOGGER.info("Stopped {}", _description);
       } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+        throw new IllegalStateException(e);
       }
     }
   }

@@ -10,8 +10,18 @@ application {
 }
 
 dependencies {
+  implementation rejoinerArts.rejoiner
   implementation azureCosmosArts.client
   implementation commonsCliArts.cli
+  implementation futureConverterArts.java8
   implementation project(':interests-network-groups')
   implementation project(':interests-network-impl')
+
+
+  implementation googleInjectArts.guice
+  implementation googleInjectArts.guiceServlet
+  implementation graphQLJavaVersionArts.graphQLJava
+  implementation gsonArts.gson
+  implementation jettyArts.servlet
+  implementation graphQLJavaVersionArts.dataLoader
 }

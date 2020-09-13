@@ -10,15 +10,20 @@ import com.github.inet.common.storage.StorageMetadata;
 import com.github.inet.entity.Group;
 import com.github.inet.resource.CreateRequestOptionsImpl;
 import com.github.inet.resource.DeleteRequestOptionsImpl;
-import com.github.inet.resource.ResponseStatus;
 import com.github.inet.resource.GetRequestOptionsImpl;
 import com.github.inet.resource.Resource;
 import com.github.inet.resource.ResourceResponse;
+import com.github.inet.resource.ResponseStatus;
 import com.github.inet.resource.UpdateRequestOptionsImpl;
 import com.github.inet.resource.group.GroupCosmosResource;
+import com.github.inet.server.graphql.GraphQLServer;
+import com.github.inet.server.graphql.client.GroupClientModule;
+import com.github.inet.server.graphql.client.OverallClientModule;
+import com.github.inet.server.graphql.schema.OverallSchemaModule;
 import com.github.inet.service.StartStopService;
 import com.github.inet.service.group.GroupServer;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +53,7 @@ public class InetDemo implements AutoCloseable {
   private static final String GROUP_CONTAINER_NAME = "groups";
 
   // ports
+  private static final int GRAPHQL_SERVER_PORT = 8080;
   private static final int GROUP_SERVICE_PORT = 30000;
 
   private final CosmosClient _client;
@@ -81,11 +87,23 @@ public class InetDemo implements AutoCloseable {
   }
 
   private List<StartStopService> createServices() {
+    List<StartStopService> services = new ArrayList<>();
+
+    // groups backend
     CosmosDatabase cosmosDatabase = _client.getDatabase(GROUP_DATABASE_NAME);
     CosmosContainer groupsContainer = cosmosDatabase.getContainer(GROUP_CONTAINER_NAME);
-
     Resource<String, Group> groupResource = new GroupCosmosResource(groupsContainer);
-    return Collections.singletonList(new GroupServer(GROUP_SERVICE_PORT, groupResource));
+    services.add(new GroupServer(GROUP_SERVICE_PORT, groupResource));
+
+    // graphql server
+    OverallSchemaModule schemaModule = new OverallSchemaModule();
+    // TODO: maybe the schema module should return the client module(s)?
+    //     : then the server would only take the schema module, get the client module and from there, the data loaders
+    OverallClientModule clientModule =
+        new OverallClientModule(Collections.singleton(new GroupClientModule("localhost", GROUP_SERVICE_PORT)));
+    services.add(new GraphQLServer(GRAPHQL_SERVER_PORT, clientModule, schemaModule));
+
+    return services;
   }
 
   private InetDemo(InetServerInitializationParams params) throws IOException {

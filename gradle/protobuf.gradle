@@ -3,7 +3,7 @@ buildscript {
     mavenCentral()
   }
   dependencies {
-    classpath protbufGradlePluginArts.plugin
+    classpath protoBufArts.plugin
   }
 }
 

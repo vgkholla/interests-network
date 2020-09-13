@@ -38,7 +38,7 @@ public class GroupService extends GroupImplBase {
       responseObserver.onError(
           new StatusRuntimeException(Status.FAILED_PRECONDITION.augmentDescription("Group ID is missing")));
     } else {
-      // todo: add metadata
+      // TODO: add metadata
       ResourceResponse<Optional<Group>> response =
           _groupResource.get(request.getId(), new GetRequestOptionsImpl.Builder().build());
       if (response.getPayload().isPresent()) {
@@ -73,7 +73,7 @@ public class GroupService extends GroupImplBase {
       responseObserver.onError(
           new StatusRuntimeException(Status.FAILED_PRECONDITION.augmentDescription("Group is missing")));
     } else {
-      // todo: add metadata
+      // TODO: add metadata
       ResourceResponse<Void> updateResponse = _groupResource.update(request.getGroup(),
           new UpdateRequestOptionsImpl.Builder().shouldUpsert(request.getShouldUpsert()).build());
       if (ResponseStatus.OK.equals(updateResponse.getStatus())) {
@@ -91,7 +91,7 @@ public class GroupService extends GroupImplBase {
       responseObserver.onError(
           new StatusRuntimeException(Status.FAILED_PRECONDITION.augmentDescription("Group ID is missing")));
     } else {
-      // todo: add metadata
+      // TODO: add metadata
       ResourceResponse<Void> deleteResponse =
           _groupResource.delete(request.getId(), new DeleteRequestOptionsImpl.Builder().build());
       if (ResponseStatus.OK.equals(deleteResponse.getStatus())) {

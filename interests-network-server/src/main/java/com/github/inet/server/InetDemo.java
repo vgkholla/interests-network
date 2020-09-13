@@ -5,16 +5,22 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
-import com.github.inet.entities.GroupProtos;
+import com.github.inet.client.group.GroupClient;
+import com.github.inet.common.storage.StorageMetadata;
+import com.github.inet.entity.Group;
 import com.github.inet.resource.CreateRequestOptionsImpl;
 import com.github.inet.resource.DeleteRequestOptionsImpl;
-import com.github.inet.resource.DeleteStatus;
+import com.github.inet.resource.ResponseStatus;
 import com.github.inet.resource.GetRequestOptionsImpl;
 import com.github.inet.resource.Resource;
 import com.github.inet.resource.ResourceResponse;
 import com.github.inet.resource.UpdateRequestOptionsImpl;
 import com.github.inet.resource.group.GroupCosmosResource;
-import com.github.inet.storage.StorageMetadataProtos;
+import com.github.inet.service.StartStopService;
+import com.github.inet.service.group.GroupServer;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.cli.CommandLine;
@@ -41,19 +47,24 @@ public class InetDemo implements AutoCloseable {
   private static final String GROUP_DATABASE_NAME = "Groups";
   private static final String GROUP_CONTAINER_NAME = "groups";
 
-  private final CosmosClient _client;
-  private final Resource<String, GroupProtos.Group> _groupResource;
+  // ports
+  private static final int GROUP_SERVICE_PORT = 30000;
 
-  public Resource<String, GroupProtos.Group> getGroupResource() {
+  private final CosmosClient _client;
+  private final Resource<String, Group> _groupResource;
+  private final List<StartStopService> _services;
+
+  public Resource<String, Group> getGroupResource() {
     return _groupResource;
   }
 
   @Override
   public void close() {
+    _services.forEach(StartStopService::stop);
     _client.close();
   }
 
-  private CosmosClient createCosmosClient(InetServerInitializationParamsProtos.CosmosDBConfiguration configuration) {
+  private CosmosClient createCosmosClient(CosmosDBConfiguration configuration) {
     checkNotNull(configuration, "CosmosDBConfiguration cannot be null");
     checkArgument(
         configuration.getCosmosDBAccountEndpoint() != null && !configuration.getCosmosDBAccountEndpoint().isEmpty(),
@@ -69,16 +80,24 @@ public class InetDemo implements AutoCloseable {
         .buildClient();
   }
 
-  private Resource<String, GroupProtos.Group> createGroupResource() {
+  private List<StartStopService> createServices() {
     CosmosDatabase cosmosDatabase = _client.getDatabase(GROUP_DATABASE_NAME);
     CosmosContainer groupsContainer = cosmosDatabase.getContainer(GROUP_CONTAINER_NAME);
-    return new GroupCosmosResource(groupsContainer);
+
+    Resource<String, Group> groupResource = new GroupCosmosResource(groupsContainer);
+    return Collections.singletonList(new GroupServer(GROUP_SERVICE_PORT, groupResource));
   }
 
-  private InetDemo(InetServerInitializationParamsProtos.InetServerInitializationParams params) {
+  private InetDemo(InetServerInitializationParams params) throws IOException {
     checkNotNull(params, "Initialization params cannot be null");
     _client = createCosmosClient(params.getCosmosDBConfiguration());
-    _groupResource = createGroupResource();
+    _services = createServices();
+
+    for (StartStopService service : _services) {
+      service.start();
+    }
+
+    _groupResource = new GroupClient("localhost", GROUP_SERVICE_PORT);
   }
 
   public static void main(String[] args) throws Exception {
@@ -87,15 +106,13 @@ public class InetDemo implements AutoCloseable {
     }
   }
 
-  private static InetServerInitializationParamsProtos.InetServerInitializationParams getInitParams(String[] args)
-      throws ParseException {
+  private static InetServerInitializationParams getInitParams(String[] args) throws ParseException {
     CommandLineParser parser = new DefaultParser();
     Options options = new Options();
     getCosmosDBOptions().getOptions().forEach(options::addOption);
     CommandLine commandLine = parser.parse(options, args);
 
-    InetServerInitializationParamsProtos.InetServerInitializationParams.Builder builder =
-        InetServerInitializationParamsProtos.InetServerInitializationParams.newBuilder();
+    InetServerInitializationParams.Builder builder = InetServerInitializationParams.newBuilder();
     builder.setCosmosDBConfiguration(getCosmosDBConfiguration(commandLine));
     return builder.build();
   }
@@ -127,10 +144,8 @@ public class InetDemo implements AutoCloseable {
     return options;
   }
 
-  private static InetServerInitializationParamsProtos.CosmosDBConfiguration getCosmosDBConfiguration(
-      CommandLine commandLine) {
-    InetServerInitializationParamsProtos.CosmosDBConfiguration.Builder builder =
-        InetServerInitializationParamsProtos.CosmosDBConfiguration.newBuilder();
+  private static CosmosDBConfiguration getCosmosDBConfiguration(CommandLine commandLine) {
+    CosmosDBConfiguration.Builder builder = CosmosDBConfiguration.newBuilder();
     builder.setCosmosDBAccountEndpoint(commandLine.getOptionValue(OPT_COSMOS_DB_ACCOUNT_ENDPOINT));
     builder.setCosmosDBAccountKey(commandLine.getOptionValue(OPT_COSMOS_DB_ACCOUNT_KEY));
     for (String region : commandLine.getOptionValues(OPT_COSMOS_DB_PREFERRED_REGIONS)) {
@@ -139,24 +154,24 @@ public class InetDemo implements AutoCloseable {
     return builder.build();
   }
 
-  private static void groupsCRUDDemo(Resource<String, GroupProtos.Group> groupResource) {
+  private static void groupsCRUDDemo(Resource<String, Group> groupResource) {
     long id = UUID.randomUUID().getLeastSignificantBits();
     String groupId = "inet:group:" + id;
 
     // create a group
-    GroupProtos.Group group = GroupProtos.Group.newBuilder().setId(groupId).setName("Demo").build();
+    Group group = Group.newBuilder().setId(groupId).setName("Demo").build();
     LOGGER.info("Creating group [\n{}]", group);
-    ResourceResponse<Boolean> createResponse = groupResource.create(group, new CreateRequestOptionsImpl());
-    if (createResponse.getPayload()) {
+    ResourceResponse<Void> createResponse = groupResource.create(group, new CreateRequestOptionsImpl());
+    if (ResponseStatus.OK.equals(createResponse.getStatus())) {
       LOGGER.info("Group created !");
     } else {
       throw new IllegalStateException("Could not create group");
     }
 
-    StorageMetadataProtos.StorageMetadata metadata = createResponse.getStorageMetadata();
+    StorageMetadata metadata = createResponse.getStorageMetadata();
     // get the group
     LOGGER.info("Fetching created group");
-    ResourceResponse<Optional<GroupProtos.Group>> getAfterCreateResponse =
+    ResourceResponse<Optional<Group>> getAfterCreateResponse =
         groupResource.get(groupId, new GetRequestOptionsImpl.Builder().metadata(metadata).build());
     getAfterCreateResponse.getPayload().map(payload -> {
       LOGGER.info("Fetched group [\n{}]", getAfterCreateResponse.getPayload().orElse(null));
@@ -165,11 +180,11 @@ public class InetDemo implements AutoCloseable {
 
     // update the group
     metadata = getAfterCreateResponse.getStorageMetadata();
-    group = GroupProtos.Group.newBuilder(group).setName("DemoUpdated").build();
+    group = Group.newBuilder(group).setName("DemoUpdated").build();
     LOGGER.info("Updating group to [\n{}]", group);
-    ResourceResponse<Boolean> updateResponse = groupResource.update(group,
+    ResourceResponse<Void> updateResponse = groupResource.update(group,
         new UpdateRequestOptionsImpl.Builder().metadata(metadata).shouldUpsert(true).build());
-    if (updateResponse.getPayload()) {
+    if (ResponseStatus.OK.equals(updateResponse.getStatus())) {
       LOGGER.info("Group updated !");
     } else {
       throw new IllegalStateException("Could not update group");
@@ -178,7 +193,7 @@ public class InetDemo implements AutoCloseable {
     // get the group
     metadata = updateResponse.getStorageMetadata();
     LOGGER.info("Fetching updated group");
-    ResourceResponse<Optional<GroupProtos.Group>> getAfterUpdateResponse =
+    ResourceResponse<Optional<Group>> getAfterUpdateResponse =
         groupResource.get(groupId, new GetRequestOptionsImpl.Builder().metadata(metadata).build());
     getAfterUpdateResponse.getPayload().map(payload -> {
       LOGGER.info("Fetched group [\n{}]", getAfterUpdateResponse.getPayload().orElse(null));
@@ -188,9 +203,9 @@ public class InetDemo implements AutoCloseable {
     // delete the group
     metadata = getAfterUpdateResponse.getStorageMetadata();
     LOGGER.info("Deleting group");
-    ResourceResponse<DeleteStatus> deleteResponse =
+    ResourceResponse<Void> deleteResponse =
         groupResource.delete(groupId, new DeleteRequestOptionsImpl.Builder().metadata(metadata).build());
-    if (deleteResponse.getPayload().equals(DeleteStatus.SUCCESS)) {
+    if (ResponseStatus.OK.equals(deleteResponse.getStatus())) {
       LOGGER.info("Group deleted !");
     } else {
       throw new IllegalStateException("Could not delete group. Received status: " + deleteResponse.getPayload());

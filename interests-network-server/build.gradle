@@ -1,38 +1,17 @@
-buildscript {
-  repositories {
-    mavenCentral()
-  }
-  dependencies {
-    classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.13'
-  }
-}
-
 plugins {
   id 'application'
-  id "com.google.protobuf" version "0.8.13"
+  id 'com.google.protobuf' version "${protbufGradlePluginVersion}"
 }
 
+apply from: file("../gradle/protobuf.gradle")
+
 application {
-  // Define the main class for the application.
   mainClassName = 'com.github.inet.server.InetDemo'
 }
 
 dependencies {
-  implementation 'com.azure:azure-cosmos:4.0.1'
-  implementation 'commons-cli:commons-cli:1.4'
+  implementation azureCosmosArts.client
+  implementation commonsCliArts.cli
   implementation project(':interests-network-groups')
   implementation project(':interests-network-impl')
-}
-
-protobuf {
-  // Configure the protoc executable
-  protoc {
-    // Download from repositories
-    artifact = 'com.google.protobuf:protoc:3.0.0'
-  }
-  generatedFilesBaseDir = "$projectDir/src/generatedProto"
-}
-
-clean {
-  delete protobuf.generatedFilesBaseDir
 }

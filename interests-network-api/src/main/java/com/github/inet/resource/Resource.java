@@ -7,9 +7,9 @@ public interface Resource<K, V> {
 
   ResourceResponse<Optional<V>> get(K key, GetRequestOptions options);
 
-  ResourceResponse<Boolean> create(V payload, CreateRequestOptions options);
+  ResourceResponse<Void> create(V payload, CreateRequestOptions options);
 
-  ResourceResponse<Boolean> update(V payload, UpdateRequestOptions options);
+  ResourceResponse<Void> update(V payload, UpdateRequestOptions options);
 
-  ResourceResponse<DeleteStatus> delete(K key, DeleteRequestOptions options);
+  ResourceResponse<Void> delete(K key, DeleteRequestOptions options);
 }

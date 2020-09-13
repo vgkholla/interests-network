@@ -1,8 +1,6 @@
 package com.github.inet.resource;
 
-import com.github.inet.storage.StorageMetadataProtos.StorageMetadata;
-
-import static com.google.common.base.Preconditions.*;
+import com.github.inet.common.storage.StorageMetadata;
 
 
 public class UpdateRequestOptionsImpl implements UpdateRequestOptions {

@@ -7,16 +7,16 @@ import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
 import com.github.inet.common.protobuf.ProtoBufJsonInterchange;
-import com.github.inet.entities.GroupProtos.Group;
+import com.github.inet.common.storage.StorageMetadata;
+import com.github.inet.entity.Group;
 import com.github.inet.resource.CreateRequestOptions;
 import com.github.inet.resource.DeleteRequestOptions;
-import com.github.inet.resource.DeleteStatus;
+import com.github.inet.resource.ResponseStatus;
 import com.github.inet.resource.GetRequestOptions;
 import com.github.inet.resource.Resource;
 import com.github.inet.resource.ResourceResponse;
 import com.github.inet.resource.ResourceResponseImpl;
 import com.github.inet.resource.UpdateRequestOptions;
-import com.github.inet.storage.StorageMetadataProtos;
 import com.github.inet.storage.cosmos.CosmosDBMetadataHandler;
 import com.github.inet.storage.cosmos.CosmosDBQuery;
 import com.google.common.collect.Iterables;
@@ -67,47 +67,48 @@ public class GroupCosmosResource implements Resource<String, Group> {
   }
 
   @Override
-  public ResourceResponse<Boolean> create(Group payload, CreateRequestOptions options) {
+  public ResourceResponse<Void> create(Group payload, CreateRequestOptions options) {
     checkNotNull(payload, "Create payload cannot be null");
     GroupUtils.verifyGroup(payload);
     CosmosItemProperties item = new CosmosItemProperties(_protoBufJsonInterchange.convert(payload));
     CosmosItemResponse<CosmosItemProperties> createResponse =
         _groupContainer.createItem(item, DEFAULT_ITEM_REQUEST_OPTIONS);
-    boolean success = createResponse.getStatusCode() == CREATE_SUCCESS_STATUS_CODE;
-    StorageMetadataProtos.StorageMetadata metadata =
-        success ? _metadataHandler.getStorageMetadata(createResponse) : null;
-    return new ResourceResponseImpl.Builder<Boolean>().payload(success).metadata(metadata).build();
+    ResponseStatus
+        responseStatus = createResponse.getStatusCode() == CREATE_SUCCESS_STATUS_CODE ? ResponseStatus.OK : ResponseStatus.INTERNAL_ERROR;
+    StorageMetadata metadata =
+        ResponseStatus.OK.equals(responseStatus) ? _metadataHandler.getStorageMetadata(createResponse) : null;
+    return new ResourceResponseImpl.Builder<Void>().status(responseStatus).metadata(metadata).build();
   }
 
   @Override
-  public ResourceResponse<Boolean> update(Group payload, UpdateRequestOptions options) {
+  public ResourceResponse<Void> update(Group payload, UpdateRequestOptions options) {
     if (!options.shouldUpsert()) {
       // TODO: support update
       throw new UnsupportedOperationException("This resource supports upserts only");
     }
-    checkNotNull(payload, "Create payload cannot be null");
+    checkNotNull(payload, "Update payload cannot be null");
     GroupUtils.verifyGroup(payload);
     CosmosItemProperties item = new CosmosItemProperties(_protoBufJsonInterchange.convert(payload));
     CosmosItemResponse<CosmosItemProperties> updateResponse =
         _groupContainer.upsertItem(item, DEFAULT_ITEM_REQUEST_OPTIONS);
-    boolean success = updateResponse.getStatusCode() == UPSERT_SUCCESS_STATUS_CODE;
-    StorageMetadataProtos.StorageMetadata metadata =
-        success ? _metadataHandler.getStorageMetadata(updateResponse) : null;
-    return new ResourceResponseImpl.Builder<Boolean>().payload(success).metadata(metadata).build();
+    ResponseStatus
+        responseStatus = updateResponse.getStatusCode() == UPSERT_SUCCESS_STATUS_CODE ? ResponseStatus.OK : ResponseStatus.INTERNAL_ERROR;
+    StorageMetadata metadata = ResponseStatus.OK.equals(responseStatus) ? _metadataHandler.getStorageMetadata(updateResponse) : null;
+    return new ResourceResponseImpl.Builder<Void>().status(responseStatus).metadata(metadata).build();
   }
 
   @Override
-  public ResourceResponse<DeleteStatus> delete(String key, DeleteRequestOptions options) {
-    checkNotNull(key, "Key to delete cannot be null");
+  public ResourceResponse<Void> delete(String key, DeleteRequestOptions options) {
+    checkArgument(key != null && !key.isEmpty(), "id cannot be null or empty");
     CosmosItemResponse<Object> deleteResponse =
         _groupContainer.deleteItem(key, new PartitionKey(key), DEFAULT_ITEM_REQUEST_OPTIONS);
     int statusCode = deleteResponse.getStatusCode();
-    DeleteStatus status = DeleteStatus.FAILED;
+    ResponseStatus responseStatus = ResponseStatus.INTERNAL_ERROR;
     if (statusCode == DELETE_SUCCESS_STATUS_CODE) {
-      status = DeleteStatus.SUCCESS;
+      responseStatus = ResponseStatus.OK;
     } else if (statusCode == DELETE_NOT_FOUND_STATUS_CODE) {
-      status = DeleteStatus.NOT_FOUND;
+      responseStatus = ResponseStatus.NOT_FOUND;
     }
-    return new ResourceResponseImpl.Builder<DeleteStatus>().payload(status).build();
+    return new ResourceResponseImpl.Builder<Void>().status(responseStatus).build();
   }
 }

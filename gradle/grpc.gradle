@@ -1,0 +1,27 @@
+apply from: file("../gradle/protobuf.gradle")
+dependencies {
+  if (pluginManager.hasPlugin('java-library')) {
+    api grpcArts.netty
+    api grpcArts.protobuf
+    api grpcArts.stub
+  } else {
+    implementation grpcArts.netty
+    implementation grpcArts.protobuf
+    implementation grpcArts.stub
+  }
+}
+
+protobuf {
+  plugins {
+    grpc {
+      artifact = grpcArts.protoc
+    }
+  }
+  generateProtoTasks {
+    all().each { task ->
+      task.plugins {
+        grpc {}
+      }
+    }
+  }
+}

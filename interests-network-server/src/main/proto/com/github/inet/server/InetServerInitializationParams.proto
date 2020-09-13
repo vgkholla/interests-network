@@ -1,9 +1,10 @@
 syntax = "proto3";
 
-package inet;
+package com.github.inet.server;
 
 option java_package = "com.github.inet.server";
-option java_outer_classname = "InetServerInitializationParamsProtos";
+option java_multiple_files = true;
+option java_outer_classname = "InetServerInitializationParamsProto";
 
 message InetServerInitializationParams {
     CosmosDBConfiguration cosmosDBConfiguration = 1;

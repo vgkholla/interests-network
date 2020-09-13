@@ -3,6 +3,6 @@ plugins {
 }
 
 dependencies {
-  api 'com.azure:azure-cosmos:4.0.1'
+  api azureCosmosArts.client
   api project(':interests-network-api')
 }

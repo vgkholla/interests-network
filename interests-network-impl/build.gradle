@@ -1,6 +1,9 @@
 plugins {
+  id 'com.google.protobuf' version "${protbufGradlePluginVersion}"
   id 'java-library'
 }
+
+apply from: file("../gradle/grpc.gradle")
 
 dependencies {
   api project(':interests-network-api')

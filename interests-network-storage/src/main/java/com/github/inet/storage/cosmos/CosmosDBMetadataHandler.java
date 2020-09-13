@@ -2,7 +2,7 @@ package com.github.inet.storage.cosmos;
 
 import com.azure.cosmos.implementation.CosmosItemProperties;
 import com.azure.cosmos.models.CosmosItemResponse;
-import com.github.inet.storage.StorageMetadataProtos.StorageMetadata;
+import com.github.inet.common.storage.StorageMetadata;;
 
 
 public class CosmosDBMetadataHandler {

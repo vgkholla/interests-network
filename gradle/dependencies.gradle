@@ -1,0 +1,26 @@
+ext {
+  protobufVersion = '3.12.0'
+
+  protoBufArts = [protobuf: "com.google.protobuf:protobuf-java:${protobufVersion}",
+                  protoc  : "com.google.protobuf:protoc:${protobufVersion}",
+                  util    : "com.google.protobuf:protobuf-java-util:${protobufVersion}"]
+
+  grpcVersion = '1.32.1'
+
+  grpcArts = [netty   : "io.grpc:grpc-netty-shaded:${grpcVersion}",
+              protobuf: "io.grpc:grpc-protobuf:${grpcVersion}",
+              stub    : "io.grpc:grpc-stub:${grpcVersion}",
+              protoc  : "io.grpc:protoc-gen-grpc-java:${grpcVersion}"]
+
+  protbufGradlePluginVersion = '0.8.13'
+
+  protbufGradlePluginArts = [plugin: "com.google.protobuf:protobuf-gradle-plugin:${protbufGradlePluginVersion}"]
+
+  azureCosmosVersion = '4.0.1'
+
+  azureCosmosArts = [client: "com.azure:azure-cosmos:${azureCosmosVersion}"]
+
+  commonsCliVersion = '1.4'
+
+  commonsCliArts = [cli: "commons-cli:commons-cli:${commonsCliVersion}"]
+}

@@ -1,0 +1,27 @@
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath protbufGradlePluginArts.plugin
+  }
+}
+
+dependencies {
+  if (pluginManager.hasPlugin('java-library')) {
+    api protoBufArts.protobuf
+  } else {
+    implementation protoBufArts.protobuf
+  }
+}
+
+protobuf {
+  protoc {
+    artifact = protoBufArts.protoc
+  }
+  generatedFilesBaseDir = "$projectDir/src/generatedProto"
+}
+
+clean {
+  delete protobuf.generatedFilesBaseDir
+}

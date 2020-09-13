@@ -9,6 +9,7 @@ dependencies {
     implementation grpcArts.protobuf
     implementation grpcArts.stub
   }
+  compileOnly apacheTomcatArts.annotations // necessary for Java 9+
 }
 
 protobuf {

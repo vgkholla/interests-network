@@ -23,4 +23,8 @@ ext {
   commonsCliVersion = '1.4'
 
   commonsCliArts = [cli: "commons-cli:commons-cli:${commonsCliVersion}"]
+
+  apacheTomcatVersion = '6.0.53'
+
+  apacheTomcatArts = [annotations: "org.apache.tomcat:annotations-api:${apacheTomcatVersion}"]
 }

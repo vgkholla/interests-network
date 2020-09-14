@@ -2,7 +2,6 @@ package com.github.inet.server.graphql;
 
 import com.github.inet.server.graphql.client.OverallClientModule;
 import com.github.inet.server.graphql.schema.OverallSchemaModule;
-import com.github.inet.service.AbstractGrpcServer;
 import com.github.inet.service.StartStopService;
 import com.google.api.graphql.rejoiner.SchemaProviderModule;
 import com.google.inject.Guice;
@@ -25,6 +24,7 @@ import static com.google.common.base.Preconditions.*;
 import static javax.servlet.DispatcherType.*;
 import static org.eclipse.jetty.servlet.ServletContextHandler.*;
 
+
 // TODO: Need an AbstractJettyServer maybe?
 public class GraphQLServer implements StartStopService {
 
@@ -45,11 +45,11 @@ public class GraphQLServer implements StartStopService {
       @Override
       protected Injector getInjector() {
         return Guice.createInjector(new ServletModule() {
-              @Override
-              protected void configureServlets() {
-                serve("/graphql").with(GraphQlServlet.class);
-              }
-            }, new DataLoaderModule(), new SchemaProviderModule(),
+                                      @Override
+                                      protected void configureServlets() {
+                                        serve("/graphql").with(GraphQlServlet.class);
+                                      }
+                                    }, new DataLoaderModule(), new SchemaProviderModule(),
             // Part of Rejoiner framework (Provides `@Schema// GraphQLSchema`)
             clientModule, schemaModule);
       }

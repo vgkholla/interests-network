@@ -3,8 +3,6 @@ package com.github.inet.server;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
 import com.github.inet.client.group.GroupClient;
 import com.github.inet.common.storage.StorageMetadata;
 import com.github.inet.entity.Group;
@@ -48,13 +46,12 @@ public class InetDemo implements AutoCloseable {
   private static final String OPT_COSMOS_DB_ACCOUNT_KEY = "cosmosDBAccountKey";
   private static final String OPT_COSMOS_DB_PREFERRED_REGIONS = "cosmosDBPreferredRegions";
 
-  // Storage Resources
-  private static final String GROUP_DATABASE_NAME = "Groups";
-  private static final String GROUP_CONTAINER_NAME = "groups";
-
   // ports
   private static final int GRAPHQL_SERVER_PORT = 8080;
   private static final int GROUP_SERVICE_PORT = 30000;
+
+  // cosmos testing
+  private static final boolean COSMOS_TESTING = false;
 
   private final CosmosClient _client;
   private final Resource<String, Group> _groupResource;
@@ -62,6 +59,12 @@ public class InetDemo implements AutoCloseable {
 
   public Resource<String, Group> getGroupResource() {
     return _groupResource;
+  }
+
+  public void awaitServicesTermination() throws InterruptedException {
+    for (StartStopService service : _services) {
+      service.awaitTermination();
+    }
   }
 
   @Override
@@ -90,9 +93,7 @@ public class InetDemo implements AutoCloseable {
     List<StartStopService> services = new ArrayList<>();
 
     // groups backend
-    CosmosDatabase cosmosDatabase = _client.getDatabase(GROUP_DATABASE_NAME);
-    CosmosContainer groupsContainer = cosmosDatabase.getContainer(GROUP_CONTAINER_NAME);
-    Resource<String, Group> groupResource = new GroupCosmosResource(groupsContainer);
+    Resource<String, Group> groupResource = new GroupCosmosResource(_client);
     services.add(new GroupServer(GROUP_SERVICE_PORT, groupResource));
 
     // graphql server
@@ -120,7 +121,11 @@ public class InetDemo implements AutoCloseable {
 
   public static void main(String[] args) throws Exception {
     try (InetDemo inetDemo = new InetDemo(getInitParams(args))) {
-      groupsCRUDDemo(inetDemo.getGroupResource());
+      if (COSMOS_TESTING) {
+        groupsCRUDDemo(inetDemo.getGroupResource());
+      } else {
+        inetDemo.awaitServicesTermination();
+      }
     }
   }
 
@@ -181,6 +186,20 @@ public class InetDemo implements AutoCloseable {
     LOGGER.info("Creating group [\n{}]", group);
     ResourceResponse<Void> createResponse = groupResource.create(group, new CreateRequestOptionsImpl());
     if (ResponseStatus.OK.equals(createResponse.getStatus())) {
+      LOGGER.info("Group created !");
+    } else {
+      throw new IllegalStateException("Could not create group");
+    }
+
+    // create another group
+    Group anotherGroup = Group.newBuilder()
+        .setId(String.valueOf(UUID.randomUUID().getLeastSignificantBits()))
+        .setName("OtherGroup")
+        .build();
+    LOGGER.info("Creating group [\n{}]", anotherGroup);
+    ResourceResponse<Void> anotherGroupCreateResponse =
+        groupResource.create(anotherGroup, new CreateRequestOptionsImpl());
+    if (ResponseStatus.OK.equals(anotherGroupCreateResponse.getStatus())) {
       LOGGER.info("Group created !");
     } else {
       throw new IllegalStateException("Could not create group");

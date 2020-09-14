@@ -48,7 +48,7 @@ import java.util.logging.Logger;
 final class GraphQlServlet extends HttpServlet {
 
   private static final Gson GSON = new GsonBuilder().serializeNulls().create();
-  private static final com.google.common.reflect.TypeToken<Map<String, Object>> MAP_TYPE_TOKEN =
+  private static final TypeToken<Map<String, Object>> MAP_TYPE_TOKEN =
       new TypeToken<Map<String, Object>>() {};
 
   private static final Logger logger = Logger.getLogger(GraphQlServlet.class.getName());
@@ -103,7 +103,7 @@ final class GraphQlServlet extends HttpServlet {
       String json = CharStreams.toString(request.getReader());
       return jsonToMap(json);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new IllegalStateException(e);
     }
   }
 

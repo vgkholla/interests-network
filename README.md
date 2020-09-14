@@ -4,10 +4,77 @@
 
 Playing with CosmosDB and GraphQL
 
-To see demo (CRUD on Cosmos DB), run
+To try, first create a CosmosDB account that has a Database with name "Groups" and container with name "groups"
 
+Then run
 ```
 ./gradlew run --args="--cosmosDBAccountEndpoint COSMOS_DB_ACCOUNT_ENDPOINT --cosmosDBAccountKey COSMOS_DB_ACCOUNT_KEY --cosmosDBPreferredRegions COSMOS_DB_ACCOUNT_PREFERRED_REGION1,COSMOS_DB_ACCOUNT_PREFERRED_REGION2"
 ```
 
-You will need a CosmosDB account that has a Database with name "Groups" and container with name "groups"
+Navigate to `http://localhost:8080/` and try out the following queries
+
+##### Create group
+
+```
+mutation {
+  createGroup(input: { group: {
+    id: "inet:group:mygroup",
+    name: "MyGroup"
+  }}) {
+    name
+  }
+}
+```
+
+##### Get created group
+
+```
+{
+  getGroup(input: { id: "inet:group:mygroup"}) {
+    name
+  }
+}
+```
+
+##### Update group
+
+```
+mutation {
+  updateGroup(input: { group: {
+    id: "inet:group:mygroup",
+    name: "MyGroupUpdated"
+  }, shouldUpsert: true}) {
+    name
+  }
+}
+```
+
+##### Get updated group
+
+```
+{
+  getGroup(input: { id: "inet:group:mygroup"}) {
+    name
+  }
+}
+```
+
+##### Delete group
+
+```
+mutation {
+  deleteGroup(input: { id: "inet:group:mygroup"}) {
+    _
+  }
+}
+```
+
+##### Try to get deleted group
+
+```
+{
+  getGroup(input: { id: "inet:group:mygroup"}) {
+    name
+  }
+}
+```

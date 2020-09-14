@@ -2,6 +2,7 @@ package com.github.inet.server.graphql.client;
 
 import com.github.inet.service.GroupGrpc;
 import com.github.inet.service.GroupGrpc.GroupBlockingStub;
+import com.github.inet.service.GroupGrpc.GroupFutureStub;
 import com.google.inject.AbstractModule;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -24,5 +25,6 @@ public class GroupClientModule extends AbstractModule {
   protected void configure() {
     ManagedChannel channel = ManagedChannelBuilder.forAddress(_host, _port).usePlaintext().build();
     bind(GroupBlockingStub.class).toInstance(GroupGrpc.newBlockingStub(channel));
+    bind(GroupFutureStub.class).toInstance(GroupGrpc.newFutureStub(channel));
   }
 }

@@ -1,5 +1,6 @@
 package com.github.inet.resource.group;
 
+import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.implementation.CosmosItemProperties;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
@@ -11,11 +12,11 @@ import com.github.inet.common.storage.StorageMetadata;
 import com.github.inet.entity.Group;
 import com.github.inet.resource.CreateRequestOptions;
 import com.github.inet.resource.DeleteRequestOptions;
-import com.github.inet.resource.ResponseStatus;
 import com.github.inet.resource.GetRequestOptions;
 import com.github.inet.resource.Resource;
 import com.github.inet.resource.ResourceResponse;
 import com.github.inet.resource.ResourceResponseImpl;
+import com.github.inet.resource.ResponseStatus;
 import com.github.inet.resource.UpdateRequestOptions;
 import com.github.inet.storage.cosmos.CosmosDBMetadataHandler;
 import com.github.inet.storage.cosmos.CosmosDBQuery;
@@ -24,16 +25,25 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.*;
 
 
 public class GroupCosmosResource implements Resource<String, Group> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(GroupCosmosResource.class);
+
+  private static final String GROUP_DATABASE_NAME = "Groups";
+  private static final String GROUP_CONTAINER_NAME = "groups";
+
   private static final CosmosQueryRequestOptions DEFAULT_QUERY_REQUEST_OPTIONS =
       new CosmosQueryRequestOptions().setQueryMetricsEnabled(true);
   private static final CosmosItemRequestOptions DEFAULT_ITEM_REQUEST_OPTIONS = new CosmosItemRequestOptions();
+
   private static final ResourceResponse<Optional<Group>> NO_MATCHING_GROUPS =
       new ResourceResponseImpl.Builder<Optional<Group>>().payload(Optional.empty()).build();
+
   private static final int CREATE_SUCCESS_STATUS_CODE = 201;
   private static final int UPSERT_SUCCESS_STATUS_CODE = 200;
   private static final int DELETE_SUCCESS_STATUS_CODE = 204;
@@ -42,21 +52,21 @@ public class GroupCosmosResource implements Resource<String, Group> {
   private static final String ID_VARIABLE = "@id";
   private static final String GET_BY_ID_QUERY = "SELECT * FROM groups where groups.id = " + ID_VARIABLE;
 
-  private final CosmosContainer _groupContainer;
-  private final CosmosDBQuery _fetchByGroupId;
+  private final CosmosClient _client;
   private final ProtoBufJsonInterchange<Group, Group.Builder> _protoBufJsonInterchange =
       new ProtoBufJsonInterchange<>(Group::newBuilder);
   private final CosmosDBMetadataHandler _metadataHandler = new CosmosDBMetadataHandler();
 
-  public GroupCosmosResource(CosmosContainer groupContainer) {
-    _groupContainer = checkNotNull(groupContainer, "Container cannot be null");
-    _fetchByGroupId = new CosmosDBQuery(groupContainer, GET_BY_ID_QUERY);
+  public GroupCosmosResource(CosmosClient client) {
+    _client = checkNotNull(client, "Client cannot be null");
   }
 
   public ResourceResponse<Optional<Group>> get(String key, GetRequestOptions options) {
     checkArgument(key != null && !key.isEmpty(), "id cannot be null or empty");
+    LOGGER.debug("Getting {}", key);
+    CosmosDBQuery query = new CosmosDBQuery(getContainer(), GET_BY_ID_QUERY);
     List<ResourceResponseImpl<Optional<Group>>> matchingGroups =
-        _fetchByGroupId.getResults(DEFAULT_QUERY_REQUEST_OPTIONS, Collections.singletonMap(ID_VARIABLE, key))
+        query.getResults(DEFAULT_QUERY_REQUEST_OPTIONS, Collections.singletonMap(ID_VARIABLE, key))
             .stream()
             .map(item -> new ResourceResponseImpl.Builder<Optional<Group>>().payload(
                 Optional.of(_protoBufJsonInterchange.convert(item.toJson())))
@@ -70,11 +80,12 @@ public class GroupCosmosResource implements Resource<String, Group> {
   public ResourceResponse<Void> create(Group payload, CreateRequestOptions options) {
     checkNotNull(payload, "Create payload cannot be null");
     GroupUtils.verifyGroup(payload);
+    LOGGER.debug("Creating {}", payload);
     CosmosItemProperties item = new CosmosItemProperties(_protoBufJsonInterchange.convert(payload));
     CosmosItemResponse<CosmosItemProperties> createResponse =
-        _groupContainer.createItem(item, DEFAULT_ITEM_REQUEST_OPTIONS);
-    ResponseStatus
-        responseStatus = createResponse.getStatusCode() == CREATE_SUCCESS_STATUS_CODE ? ResponseStatus.OK : ResponseStatus.INTERNAL_ERROR;
+        getContainer().createItem(item, new PartitionKey(payload.getId()), DEFAULT_ITEM_REQUEST_OPTIONS);
+    ResponseStatus responseStatus = createResponse.getStatusCode() == CREATE_SUCCESS_STATUS_CODE ? ResponseStatus.OK
+        : ResponseStatus.INTERNAL_ERROR;
     StorageMetadata metadata =
         ResponseStatus.OK.equals(responseStatus) ? _metadataHandler.getStorageMetadata(createResponse) : null;
     return new ResourceResponseImpl.Builder<Void>().status(responseStatus).metadata(metadata).build();
@@ -88,20 +99,25 @@ public class GroupCosmosResource implements Resource<String, Group> {
     }
     checkNotNull(payload, "Update payload cannot be null");
     GroupUtils.verifyGroup(payload);
+    LOGGER.debug("Updating {}", payload);
+    // TODO: there seems to be a bug in the cosmos client that doesn't reset the partition key header b/w requests
+    // TODO: this may have been fixed in the latest version but CosmosItemProperties is gone in that version
     CosmosItemProperties item = new CosmosItemProperties(_protoBufJsonInterchange.convert(payload));
     CosmosItemResponse<CosmosItemProperties> updateResponse =
-        _groupContainer.upsertItem(item, DEFAULT_ITEM_REQUEST_OPTIONS);
-    ResponseStatus
-        responseStatus = updateResponse.getStatusCode() == UPSERT_SUCCESS_STATUS_CODE ? ResponseStatus.OK : ResponseStatus.INTERNAL_ERROR;
-    StorageMetadata metadata = ResponseStatus.OK.equals(responseStatus) ? _metadataHandler.getStorageMetadata(updateResponse) : null;
+        getContainer().upsertItem(item, DEFAULT_ITEM_REQUEST_OPTIONS);
+    ResponseStatus responseStatus = updateResponse.getStatusCode() == UPSERT_SUCCESS_STATUS_CODE ? ResponseStatus.OK
+        : ResponseStatus.INTERNAL_ERROR;
+    StorageMetadata metadata =
+        ResponseStatus.OK.equals(responseStatus) ? _metadataHandler.getStorageMetadata(updateResponse) : null;
     return new ResourceResponseImpl.Builder<Void>().status(responseStatus).metadata(metadata).build();
   }
 
   @Override
   public ResourceResponse<Void> delete(String key, DeleteRequestOptions options) {
     checkArgument(key != null && !key.isEmpty(), "id cannot be null or empty");
+    LOGGER.debug("Deleting {}", key);
     CosmosItemResponse<Object> deleteResponse =
-        _groupContainer.deleteItem(key, new PartitionKey(key), DEFAULT_ITEM_REQUEST_OPTIONS);
+        getContainer().deleteItem(key, new PartitionKey(key), DEFAULT_ITEM_REQUEST_OPTIONS);
     int statusCode = deleteResponse.getStatusCode();
     ResponseStatus responseStatus = ResponseStatus.INTERNAL_ERROR;
     if (statusCode == DELETE_SUCCESS_STATUS_CODE) {
@@ -110,5 +126,9 @@ public class GroupCosmosResource implements Resource<String, Group> {
       responseStatus = ResponseStatus.NOT_FOUND;
     }
     return new ResourceResponseImpl.Builder<Void>().status(responseStatus).build();
+  }
+
+  private CosmosContainer getContainer() {
+    return _client.getDatabase(GROUP_DATABASE_NAME).getContainer(GROUP_CONTAINER_NAME);
   }
 }

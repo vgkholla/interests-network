@@ -26,6 +26,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -53,7 +60,7 @@ public class InetDemo implements AutoCloseable {
   // cosmos testing
   private static final boolean COSMOS_TESTING = false;
 
-  private final CosmosClient _client;
+  private final CosmosClient _cosmosClient;
   private final Resource<String, Group> _groupResource;
   private final List<StartStopService> _services;
 
@@ -70,7 +77,7 @@ public class InetDemo implements AutoCloseable {
   @Override
   public void close() {
     _services.forEach(StartStopService::stop);
-    _client.close();
+    _cosmosClient.close();
   }
 
   private CosmosClient createCosmosClient(CosmosDBConfiguration configuration) {
@@ -93,23 +100,25 @@ public class InetDemo implements AutoCloseable {
     List<StartStopService> services = new ArrayList<>();
 
     // groups backend
-    Resource<String, Group> groupResource = new GroupCosmosResource(_client);
+    Resource<String, Group> groupResource = new GroupCosmosResource(_cosmosClient);
     services.add(new GroupServer(GROUP_SERVICE_PORT, groupResource));
 
-    // graphql server
-    OverallSchemaModule schemaModule = new OverallSchemaModule();
-    // TODO: maybe the schema module should return the client module(s)?
-    //     : then the server would only take the schema module, get the client module and from there, the data loaders
-    OverallClientModule clientModule =
-        new OverallClientModule(Collections.singleton(new GroupClientModule("localhost", GROUP_SERVICE_PORT)));
-    services.add(new GraphQLServer(GRAPHQL_SERVER_PORT, clientModule, schemaModule));
+    if (!COSMOS_TESTING) {
+      // graphql server
+      OverallSchemaModule schemaModule = new OverallSchemaModule();
+      // TODO: maybe the schema module should return the client module(s)?
+      //     : then the server would only take the schema module, get the client module and from there, the data loaders
+      OverallClientModule clientModule =
+          new OverallClientModule(Collections.singleton(new GroupClientModule("localhost", GROUP_SERVICE_PORT)));
+      services.add(new GraphQLServer(GRAPHQL_SERVER_PORT, clientModule, schemaModule));
+    }
 
     return services;
   }
 
   private InetDemo(InetServerInitializationParams params) throws IOException {
     checkNotNull(params, "Initialization params cannot be null");
-    _client = createCosmosClient(params.getCosmosDBConfiguration());
+    _cosmosClient = createCosmosClient(params.getCosmosDBConfiguration());
     _services = createServices();
 
     for (StartStopService service : _services) {
@@ -120,11 +129,28 @@ public class InetDemo implements AutoCloseable {
   }
 
   public static void main(String[] args) throws Exception {
-    try (InetDemo inetDemo = new InetDemo(getInitParams(args))) {
-      if (COSMOS_TESTING) {
-        groupsCRUDDemo(inetDemo.getGroupResource());
-      } else {
-        inetDemo.awaitServicesTermination();
+    int numThreads = 10;
+    ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+    try {
+      try (InetDemo inetDemo = new InetDemo(getInitParams(args))) {
+        if (COSMOS_TESTING) {
+          List<Callable<Void>> callables =
+              IntStream.range(0, numThreads).boxed().map(ignored -> (Callable<Void>) () -> {
+                groupsCRUDDemo(inetDemo.getGroupResource());
+                return null;
+              }).collect(Collectors.toList());
+          List<Future<Void>> futures = executorService.invokeAll(callables);
+          for (Future<Void> future : futures) {
+            future.get();
+          }
+        } else {
+          inetDemo.awaitServicesTermination();
+        }
+      }
+    } finally {
+      executorService.shutdown();
+      if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
+        executorService.shutdownNow();
       }
     }
   }
@@ -186,20 +212,6 @@ public class InetDemo implements AutoCloseable {
     LOGGER.info("Creating group [\n{}]", group);
     ResourceResponse<Void> createResponse = groupResource.create(group, new CreateRequestOptionsImpl());
     if (ResponseStatus.OK.equals(createResponse.getStatus())) {
-      LOGGER.info("Group created !");
-    } else {
-      throw new IllegalStateException("Could not create group");
-    }
-
-    // create another group
-    Group anotherGroup = Group.newBuilder()
-        .setId(String.valueOf(UUID.randomUUID().getLeastSignificantBits()))
-        .setName("OtherGroup")
-        .build();
-    LOGGER.info("Creating group [\n{}]", anotherGroup);
-    ResourceResponse<Void> anotherGroupCreateResponse =
-        groupResource.create(anotherGroup, new CreateRequestOptionsImpl());
-    if (ResponseStatus.OK.equals(anotherGroupCreateResponse.getStatus())) {
       LOGGER.info("Group created !");
     } else {
       throw new IllegalStateException("Could not create group");

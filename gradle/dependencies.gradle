@@ -12,7 +12,7 @@ ext {
               stub    : "io.grpc:grpc-stub:${grpcVersion}",
               protoc  : "io.grpc:protoc-gen-grpc-java:${grpcVersion}"]
 
-  azureCosmosVersion = '4.0.1'
+  azureCosmosVersion = '4.4.0'
   azureCosmosArts = [client: "com.azure:azure-cosmos:${azureCosmosVersion}"]
 
   commonsCliVersion = '1.4'
@@ -41,4 +41,20 @@ ext {
 
   jettyServletVersion = '9.3.8.v20160314'
   jettyArts = [servlet: "org.eclipse.jetty:jetty-servlet:${jettyServletVersion}"]
+
+  jacksonVersion = '2.10.1'
+  jacksonArts = [core       : "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}",
+                 databind   : "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}",
+                 annotations: "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"]
+
+  guavaVersion = '29.0-jre'
+  guavaArts = [guava: "com.google.guava:guava:${guavaVersion}"]
+
+  log4jVersion = '2.13.3'
+  log4jArts = [api : "org.apache.logging.log4j:log4j-api:${log4jVersion}",
+               core: "org.apache.logging.log4j:log4j-core:${log4jVersion}",
+               sl4j: "org.apache.logging.log4j:log4j-slf4j-impl:${log4jVersion}"]
+
+  junitVersion = '4.13'
+  junitArts = [junit: "junit:junit:${junitVersion}"]
 }

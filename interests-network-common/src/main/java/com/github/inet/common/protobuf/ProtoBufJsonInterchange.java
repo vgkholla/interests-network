@@ -1,5 +1,7 @@
 package com.github.inet.common.protobuf;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import java.util.function.Function;
@@ -7,6 +9,8 @@ import java.util.function.Supplier;
 
 
 public class ProtoBufJsonInterchange<M extends Message, B extends Message.Builder> {
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
   private final Supplier<B> _builderSupplier;
   private final Function<B, M> _builderToTypeConverter;
 
@@ -20,19 +24,22 @@ public class ProtoBufJsonInterchange<M extends Message, B extends Message.Builde
     _builderToTypeConverter = builderToTypeConverter;
   }
 
-  public M convert(String json) {
+  public M convert(ObjectNode json) {
     B builder = _builderSupplier.get();
     try {
-      JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
+      // TODO: explore going directly from JsonNode to M
+      JsonFormat.parser().ignoringUnknownFields().merge(OBJECT_MAPPER.writeValueAsString(json), builder);
       return _builderToTypeConverter.apply(builder);
     } catch (Exception e) {
       throw new IllegalStateException(e);
     }
   }
 
-  public String convert(M message) {
+  public ObjectNode convert(M message) {
     try {
-      return JsonFormat.printer().omittingInsignificantWhitespace().print(message);
+      // TODO: explore going directly from M to JsonNode
+      return OBJECT_MAPPER.readValue(JsonFormat.printer().omittingInsignificantWhitespace().print(message),
+          ObjectNode.class);
     } catch (Exception e) {
       throw new IllegalStateException(e);
     }

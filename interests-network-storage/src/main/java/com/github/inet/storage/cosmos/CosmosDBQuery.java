@@ -1,11 +1,11 @@
 package com.github.inet.storage.cosmos;
 
 import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.implementation.CosmosItemProperties;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.SqlParameter;
 import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,13 +23,13 @@ public class CosmosDBQuery {
     checkArgument(!query.isEmpty(), "Query string cannot be empty");
   }
 
-  public CosmosPagedIterable<CosmosItemProperties> getResults(CosmosQueryRequestOptions options,
+  public CosmosPagedIterable<ObjectNode> getResults(CosmosQueryRequestOptions options,
       Map<String, Object> variableValues) {
     List<SqlParameter> paramList = variableValues.entrySet()
         .stream()
         .map(entry -> new SqlParameter(entry.getKey(), entry.getValue()))
         .collect(Collectors.toList());
     SqlQuerySpec querySpec = new SqlQuerySpec(_query, paramList);
-    return _container.queryItems(querySpec, options, CosmosItemProperties.class);
+    return _container.queryItems(querySpec, options, ObjectNode.class);
   }
 }

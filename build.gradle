@@ -31,12 +31,15 @@ subprojects {
   targetCompatibility = 1.8
 
   dependencies {
-    implementation 'com.google.guava:guava:29.0-jre'
-    implementation "org.apache.logging.log4j:log4j-api:2.13.3"
-    implementation "org.apache.logging.log4j:log4j-core:2.13.3"
-    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.13.3'
+    implementation guavaArts.guava
+    implementation log4jArts.api
+    implementation log4jArts.core
+    implementation log4jArts.sl4j
+    implementation jacksonArts.core
+    implementation jacksonArts.databind
+    implementation jacksonArts.annotations
 
-    testImplementation 'junit:junit:4.13'
+    testImplementation junitArts.junit
   }
 
   spotbugs {

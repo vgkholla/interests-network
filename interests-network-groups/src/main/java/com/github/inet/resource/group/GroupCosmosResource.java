@@ -2,11 +2,10 @@ package com.github.inet.resource.group;
 
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.implementation.CosmosItemProperties;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
-import com.azure.cosmos.models.PartitionKey;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.inet.common.protobuf.ProtoBufJsonInterchange;
 import com.github.inet.common.storage.StorageMetadata;
 import com.github.inet.entity.Group;
@@ -61,6 +60,10 @@ public class GroupCosmosResource implements Resource<String, Group> {
     _client = checkNotNull(client, "Client cannot be null");
   }
 
+  // TODO: Report a bug where if partition key is set, it is used across requests.
+  //       createItem(item, setPartKey)
+  //       updateItem(differentItem) // without setting part key
+  //       fails (and same for multithreading)
   public ResourceResponse<Optional<Group>> get(String key, GetRequestOptions options) {
     checkArgument(key != null && !key.isEmpty(), "id cannot be null or empty");
     LOGGER.debug("Getting {}", key);
@@ -69,7 +72,7 @@ public class GroupCosmosResource implements Resource<String, Group> {
         query.getResults(DEFAULT_QUERY_REQUEST_OPTIONS, Collections.singletonMap(ID_VARIABLE, key))
             .stream()
             .map(item -> new ResourceResponseImpl.Builder<Optional<Group>>().payload(
-                Optional.of(_protoBufJsonInterchange.convert(item.toJson())))
+                Optional.of(_protoBufJsonInterchange.convert(item)))
                 .metadata(_metadataHandler.getStorageMetadata(item))
                 .build())
             .collect(Collectors.toList());
@@ -81,9 +84,8 @@ public class GroupCosmosResource implements Resource<String, Group> {
     checkNotNull(payload, "Create payload cannot be null");
     GroupUtils.verifyGroup(payload);
     LOGGER.debug("Creating {}", payload);
-    CosmosItemProperties item = new CosmosItemProperties(_protoBufJsonInterchange.convert(payload));
-    CosmosItemResponse<CosmosItemProperties> createResponse =
-        getContainer().createItem(item, new PartitionKey(payload.getId()), DEFAULT_ITEM_REQUEST_OPTIONS);
+    ObjectNode item = _protoBufJsonInterchange.convert(payload);
+    CosmosItemResponse<ObjectNode> createResponse = getContainer().createItem(item, DEFAULT_ITEM_REQUEST_OPTIONS);
     ResponseStatus responseStatus = createResponse.getStatusCode() == CREATE_SUCCESS_STATUS_CODE ? ResponseStatus.OK
         : ResponseStatus.INTERNAL_ERROR;
     StorageMetadata metadata =
@@ -100,11 +102,9 @@ public class GroupCosmosResource implements Resource<String, Group> {
     checkNotNull(payload, "Update payload cannot be null");
     GroupUtils.verifyGroup(payload);
     LOGGER.debug("Updating {}", payload);
-    // TODO: there seems to be a bug in the cosmos client that doesn't reset the partition key header b/w requests
-    // TODO: this may have been fixed in the latest version but CosmosItemProperties is gone in that version
-    CosmosItemProperties item = new CosmosItemProperties(_protoBufJsonInterchange.convert(payload));
-    CosmosItemResponse<CosmosItemProperties> updateResponse =
-        getContainer().upsertItem(item, DEFAULT_ITEM_REQUEST_OPTIONS);
+
+    ObjectNode item = _protoBufJsonInterchange.convert(payload);
+    CosmosItemResponse<ObjectNode> updateResponse = getContainer().upsertItem(item, DEFAULT_ITEM_REQUEST_OPTIONS);
     ResponseStatus responseStatus = updateResponse.getStatusCode() == UPSERT_SUCCESS_STATUS_CODE ? ResponseStatus.OK
         : ResponseStatus.INTERNAL_ERROR;
     StorageMetadata metadata =
@@ -116,8 +116,8 @@ public class GroupCosmosResource implements Resource<String, Group> {
   public ResourceResponse<Void> delete(String key, DeleteRequestOptions options) {
     checkArgument(key != null && !key.isEmpty(), "id cannot be null or empty");
     LOGGER.debug("Deleting {}", key);
-    CosmosItemResponse<Object> deleteResponse =
-        getContainer().deleteItem(key, new PartitionKey(key), DEFAULT_ITEM_REQUEST_OPTIONS);
+    ObjectNode objectNode = _protoBufJsonInterchange.convert(Group.newBuilder().setId(key).build());
+    CosmosItemResponse<Object> deleteResponse = getContainer().deleteItem(objectNode, DEFAULT_ITEM_REQUEST_OPTIONS);
     int statusCode = deleteResponse.getStatusCode();
     ResponseStatus responseStatus = ResponseStatus.INTERNAL_ERROR;
     if (statusCode == DELETE_SUCCESS_STATUS_CODE) {

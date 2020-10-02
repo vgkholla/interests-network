@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package com.github.ptracker.entity;
+
+option java_package = "com.github.ptracker.entity";
+option java_multiple_files = true;
+option java_outer_classname = "PlantProto";
+
+message Plant {
+
+  string id = 1;
+
+  string name = 2;
+}

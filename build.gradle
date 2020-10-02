@@ -10,7 +10,7 @@ buildscript {
 }
 
 allprojects {
-  group = "com.github.inet"
+  group = "com.github.ptracker"
   apply plugin: 'idea'
 
   repositories {

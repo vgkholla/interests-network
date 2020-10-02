@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package com.github.ptracker.server;
+
+option java_package = "com.github.ptracker.server";
+option java_multiple_files = true;
+option java_outer_classname = "PlantTrackerServerInitializationParamsProto";
+
+message PlantTrackerServerInitializationParams {
+    CosmosDBConfiguration cosmosDBConfiguration = 1;
+}
+
+message CosmosDBConfiguration {
+  string cosmosDBAccountEndpoint = 1;
+
+  string cosmosDBAccountKey = 2;
+
+  repeated string preferredRegions = 3;
+}

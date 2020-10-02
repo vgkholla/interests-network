@@ -9,11 +9,11 @@ gradleEnterprise {
   }
 }
 
-rootProject.name = 'interests-network'
-include 'interests-network-server'
-include 'interests-network-storage'
-include 'interests-network-groups'
-include 'interests-network-models'
-include 'interests-network-api'
-include 'interests-network-impl'
-include 'interests-network-common'
+rootProject.name = 'plant-tracker'
+include 'plant-tracker-server'
+include 'plant-tracker-storage'
+include 'plant-tracker-plants'
+include 'plant-tracker-models'
+include 'plant-tracker-api'
+include 'plant-tracker-impl'
+include 'plant-tracker-common'

@@ -1,10 +1,10 @@
-# interests-network
+# plant-tracker
 [![Build Status](https://travis-ci.com/vgkholla/interests-network.svg?token=xJUBNqLxdQWLRs7Mz3ya&branch=master)](https://travis-ci.com/vgkholla/interests-network)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/56437f45d4934e95b9e85589e853f657)](https://www.codacy.com/manual/vgkholla/interests-network?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=vgkholla/interests-network&amp;utm_campaign=Badge_Grade)
 
 Playing with CosmosDB and GraphQL
 
-To try, first create a CosmosDB account that has a Database with name "Groups" and container with name "groups"
+To try, first create a CosmosDB account that has a Database with name "Plants" and container with name "plants"
 
 Then run
 ```
@@ -13,67 +13,67 @@ Then run
 
 Navigate to `http://localhost:8080/` and try out the following queries
 
-##### Create group
+##### Create plant
 
 ```
 mutation {
-  createGroup(input: { group: {
-    id: "inet:group:mygroup",
-    name: "MyGroup"
+  createPlant(input: { plant: {
+    id: "ptracker:plant:myplant",
+    name: "MyPlant"
   }}) {
     name
   }
 }
 ```
 
-##### Get created group
+##### Get created plant
 
 ```
 {
-  getGroup(input: { id: "inet:group:mygroup"}) {
+  getPlant(input: { id: "ptracker:plant:myplant"}) {
     name
   }
 }
 ```
 
-##### Update group
+##### Update plant
 
 ```
 mutation {
-  updateGroup(input: { group: {
-    id: "inet:group:mygroup",
-    name: "MyGroupUpdated"
+  updatePlant(input: { plant: {
+    id: "ptracker:plant:myplant",
+    name: "MyPlantUpdated"
   }, shouldUpsert: true}) {
     name
   }
 }
 ```
 
-##### Get updated group
+##### Get updated plant
 
 ```
 {
-  getGroup(input: { id: "inet:group:mygroup"}) {
+  getPlant(input: { id: "ptracker:plant:myplant"}) {
     name
   }
 }
 ```
 
-##### Delete group
+##### Delete plant
 
 ```
 mutation {
-  deleteGroup(input: { id: "inet:group:mygroup"}) {
+  deletePlant(input: { id: "ptracker:plant:myplant"}) {
     _
   }
 }
 ```
 
-##### Try to get deleted group
+##### Try to get deleted plant
 
 ```
 {
-  getGroup(input: { id: "inet:group:mygroup"}) {
+  getPlant(input: { id: "ptracker:plant:myplant"}) {
     name
   }
 }

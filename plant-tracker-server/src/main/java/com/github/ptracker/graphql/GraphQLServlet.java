@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.github.ptracker.server.graphql;
+package com.github.ptracker.graphql;
 
 import com.google.api.graphql.execution.GuavaListenableFutureSupport;
 import com.google.api.graphql.rejoiner.Schema;
@@ -29,29 +29,28 @@ import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.tracing.TracingInstrumentation;
 import graphql.schema.GraphQLSchema;
-import org.dataloader.DataLoaderRegistry;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.dataloader.DataLoaderRegistry;
 
 @Singleton
-final class GraphQlServlet extends HttpServlet {
+final class GraphQLServlet extends HttpServlet {
 
   private static final Gson GSON = new GsonBuilder().serializeNulls().create();
   private static final TypeToken<Map<String, Object>> MAP_TYPE_TOKEN =
       new TypeToken<Map<String, Object>>() {};
 
-  private static final Logger logger = Logger.getLogger(GraphQlServlet.class.getName());
+  private static final Logger logger = Logger.getLogger(GraphQLServlet.class.getName());
   @Inject @Schema GraphQLSchema schema;
   @Inject Provider<DataLoaderRegistry> registryProvider;
 

@@ -14,7 +14,6 @@ dependencies {
   implementation azureCosmosArts.client
   implementation commonsCliArts.cli
   implementation futureConverterArts.java8
-  implementation project(':plant-tracker-plants')
   implementation project(':plant-tracker-impl')
 
 

@@ -1,7 +1,7 @@
-package com.github.ptracker.server.graphql;
+package com.github.ptracker.graphql;
 
-import com.github.ptracker.server.graphql.client.OverallClientModule;
-import com.github.ptracker.server.graphql.schema.OverallSchemaModule;
+import com.github.ptracker.graphql.client.OverallClientModule;
+import com.github.ptracker.graphql.schema.OverallSchemaModule;
 import com.github.ptracker.service.StartStopService;
 import com.google.api.graphql.rejoiner.SchemaProviderModule;
 import com.google.inject.Guice;
@@ -47,7 +47,7 @@ public class GraphQLServer implements StartStopService {
         return Guice.createInjector(new ServletModule() {
                                       @Override
                                       protected void configureServlets() {
-                                        serve("/graphql").with(GraphQlServlet.class);
+                                        serve("/graphql").with(GraphQLServlet.class);
                                       }
                                     }, new DataLoaderModule(), new SchemaProviderModule(),
             // Part of Rejoiner framework (Provides `@Schema// GraphQLSchema`)

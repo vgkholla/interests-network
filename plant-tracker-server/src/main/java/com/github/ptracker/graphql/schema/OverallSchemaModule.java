@@ -1,4 +1,4 @@
-package com.github.ptracker.server.graphql.schema;
+package com.github.ptracker.graphql.schema;
 
 import com.google.inject.AbstractModule;
 

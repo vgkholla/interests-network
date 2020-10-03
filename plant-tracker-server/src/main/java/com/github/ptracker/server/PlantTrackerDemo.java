@@ -3,23 +3,23 @@ package com.github.ptracker.server;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.github.ptracker.client.plant.PlantClient;
 import com.github.ptracker.common.storage.StorageMetadata;
 import com.github.ptracker.entity.Plant;
+import com.github.ptracker.graphql.GraphQLServer;
+import com.github.ptracker.graphql.client.OverallClientModule;
+import com.github.ptracker.graphql.client.PlantClientModule;
+import com.github.ptracker.graphql.schema.OverallSchemaModule;
+import com.github.ptracker.plant.PlantClient;
+import com.github.ptracker.plant.PlantServer;
 import com.github.ptracker.resource.CreateRequestOptionsImpl;
 import com.github.ptracker.resource.DeleteRequestOptionsImpl;
 import com.github.ptracker.resource.GetRequestOptionsImpl;
+import com.github.ptracker.resource.GrpcResource;
 import com.github.ptracker.resource.Resource;
 import com.github.ptracker.resource.ResourceResponse;
 import com.github.ptracker.resource.ResponseStatus;
 import com.github.ptracker.resource.UpdateRequestOptionsImpl;
-import com.github.ptracker.resource.plant.PlantCosmosResource;
-import com.github.ptracker.server.graphql.GraphQLServer;
-import com.github.ptracker.server.graphql.client.PlantClientModule;
-import com.github.ptracker.server.graphql.client.OverallClientModule;
-import com.github.ptracker.server.graphql.schema.OverallSchemaModule;
 import com.github.ptracker.service.StartStopService;
-import com.github.ptracker.service.plant.PlantServer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -100,8 +100,7 @@ public class PlantTrackerDemo implements AutoCloseable {
     List<StartStopService> services = new ArrayList<>();
 
     // plants backend
-    Resource<String, Plant> plantResource = new PlantCosmosResource(_cosmosClient);
-    services.add(new PlantServer(PLANT_SERVICE_PORT, plantResource));
+    services.add(new PlantServer(PLANT_SERVICE_PORT, _cosmosClient));
 
     if (!COSMOS_TESTING) {
       // graphql server
@@ -125,7 +124,7 @@ public class PlantTrackerDemo implements AutoCloseable {
       service.start();
     }
 
-    _plantResource = new PlantClient("localhost", PLANT_SERVICE_PORT);
+    _plantResource = new GrpcResource<>(new PlantClient("localhost", PLANT_SERVICE_PORT));
   }
 
   public static void main(String[] args) throws Exception {

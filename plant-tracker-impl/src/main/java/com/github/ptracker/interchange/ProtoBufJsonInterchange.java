@@ -1,4 +1,4 @@
-package com.github.ptracker.common.protobuf;
+package com.github.ptracker.interchange;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -8,7 +8,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 
-public class ProtoBufJsonInterchange<M extends Message, B extends Message.Builder> {
+public class ProtoBufJsonInterchange<M extends Message, B extends Message.Builder>
+    implements DataInterchange<ObjectNode, M> {
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private final Supplier<B> _builderSupplier;
@@ -24,7 +25,7 @@ public class ProtoBufJsonInterchange<M extends Message, B extends Message.Builde
     _builderToTypeConverter = builderToTypeConverter;
   }
 
-  public M convert(ObjectNode json) {
+  public M convertForward(ObjectNode json) {
     B builder = _builderSupplier.get();
     try {
       // TODO: explore going directly from JsonNode to M
@@ -35,7 +36,7 @@ public class ProtoBufJsonInterchange<M extends Message, B extends Message.Builde
     }
   }
 
-  public ObjectNode convert(M message) {
+  public ObjectNode convertBackward(M message) {
     try {
       // TODO: explore going directly from M to JsonNode
       return OBJECT_MAPPER.readValue(JsonFormat.printer().omittingInsignificantWhitespace().print(message),

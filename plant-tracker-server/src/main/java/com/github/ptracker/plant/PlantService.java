@@ -1,4 +1,4 @@
-package com.github.ptracker.service.plant;
+package com.github.ptracker.plant;
 
 import com.github.ptracker.entity.Plant;
 import com.github.ptracker.resource.CreateRequestOptionsImpl;
@@ -14,9 +14,9 @@ import com.github.ptracker.service.PlantDeleteRequest;
 import com.github.ptracker.service.PlantDeleteResponse;
 import com.github.ptracker.service.PlantGetRequest;
 import com.github.ptracker.service.PlantGetResponse;
+import com.github.ptracker.service.PlantGrpc.PlantImplBase;
 import com.github.ptracker.service.PlantUpdateRequest;
 import com.github.ptracker.service.PlantUpdateResponse;
-import com.github.ptracker.service.PlantGrpc.PlantImplBase;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;

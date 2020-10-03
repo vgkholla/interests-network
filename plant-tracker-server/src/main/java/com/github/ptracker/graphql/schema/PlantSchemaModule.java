@@ -1,4 +1,4 @@
-package com.github.ptracker.server.graphql.schema;
+package com.github.ptracker.graphql.schema;
 
 import com.github.ptracker.entity.Plant;
 import com.github.ptracker.service.PlantCreateRequest;

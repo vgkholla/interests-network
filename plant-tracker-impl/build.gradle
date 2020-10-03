@@ -6,5 +6,12 @@ plugins {
 apply from: file("../gradle/grpc.gradle")
 
 dependencies {
+  api azureCosmosArts.client
   api project(':plant-tracker-api')
+  api project(':plant-tracker-models')
+  api protoBufArts.protobuf
+
+  implementation protoBufArts.util
+  implementation project(':plant-tracker-storage')
+  implementation protoBufArts.util
 }

@@ -10,13 +10,13 @@ import org.slf4j.LoggerFactory;
 import static com.google.common.base.Preconditions.*;
 
 
-public abstract class AbstractGrpcServer implements StartStopService {
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractGrpcServer.class);
+public class GrpcServer implements StartStopService {
+  private static final Logger LOGGER = LoggerFactory.getLogger(GrpcServer.class);
 
   private final String _description;
   private final Server _server;
 
-  protected AbstractGrpcServer(String description, ServerBuilder<?> serverBuilder) {
+  protected GrpcServer(String description, ServerBuilder<?> serverBuilder) {
     _description = checkNotNull(description, "Description cannot be null");
     _server = serverBuilder.build();
   }
@@ -27,11 +27,11 @@ public abstract class AbstractGrpcServer implements StartStopService {
     _server.start();
     LOGGER.info("{} started, listening on {}", _description, _server.getPort());
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      if (!AbstractGrpcServer.this.isShutdown()) {
+      if (!GrpcServer.this.isShutdown()) {
         // Use stderr here since the logger may have been reset by its JVM shutdown hook.
         System.err.println("Shutting down " + _description + " since JVM is shutting down");
         try {
-          AbstractGrpcServer.this.stop();
+          GrpcServer.this.stop();
         } catch (Exception e) {
           e.printStackTrace(System.err);
         }

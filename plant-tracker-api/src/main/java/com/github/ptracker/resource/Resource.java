@@ -3,13 +3,13 @@ package com.github.ptracker.resource;
 import java.util.Optional;
 
 
-public interface Resource<K, V> {
+public interface Resource<KEY_TYPE, VALUE_TYPE> {
 
-  ResourceResponse<Optional<V>> get(K key, GetRequestOptions options);
+  ResourceResponse<Optional<VALUE_TYPE>> get(KEY_TYPE key, GetRequestOptions options);
 
-  ResourceResponse<Void> create(V payload, CreateRequestOptions options);
+  ResourceResponse<Void> create(VALUE_TYPE payload, CreateRequestOptions options);
 
-  ResourceResponse<Void> update(V payload, UpdateRequestOptions options);
+  ResourceResponse<Void> update(VALUE_TYPE payload, UpdateRequestOptions options);
 
-  ResourceResponse<Void> delete(K key, DeleteRequestOptions options);
+  ResourceResponse<Void> delete(KEY_TYPE key, DeleteRequestOptions options);
 }

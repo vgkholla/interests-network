@@ -1,4 +1,4 @@
-package com.github.ptracker.server.graphql.client;
+package com.github.ptracker.graphql.client;
 
 import com.github.ptracker.service.PlantGrpc;
 import com.github.ptracker.service.PlantGrpc.PlantBlockingStub;
@@ -26,5 +26,6 @@ public class PlantClientModule extends AbstractModule {
     ManagedChannel channel = ManagedChannelBuilder.forAddress(_host, _port).usePlaintext().build();
     bind(PlantBlockingStub.class).toInstance(PlantGrpc.newBlockingStub(channel));
     bind(PlantFutureStub.class).toInstance(PlantGrpc.newFutureStub(channel));
+
   }
 }

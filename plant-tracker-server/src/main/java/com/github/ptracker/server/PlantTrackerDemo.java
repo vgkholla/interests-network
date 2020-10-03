@@ -5,10 +5,10 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.github.ptracker.common.storage.StorageMetadata;
 import com.github.ptracker.entity.Plant;
+import com.github.ptracker.graphql.provider.FullGraphProvider;
 import com.github.ptracker.graphql.GraphQLServer;
-import com.github.ptracker.graphql.client.OverallClientModule;
-import com.github.ptracker.graphql.client.PlantClientModule;
-import com.github.ptracker.graphql.schema.OverallSchemaModule;
+import com.github.ptracker.graphql.api.GraphQLModuleProvider;
+import com.github.ptracker.graphql.provider.PlantModuleProvider;
 import com.github.ptracker.plant.PlantClient;
 import com.github.ptracker.plant.PlantServer;
 import com.github.ptracker.resource.CreateRequestOptionsImpl;
@@ -104,12 +104,9 @@ public class PlantTrackerDemo implements AutoCloseable {
 
     if (!COSMOS_TESTING) {
       // graphql server
-      OverallSchemaModule schemaModule = new OverallSchemaModule();
-      // TODO: maybe the schema module should return the client module(s)?
-      //     : then the server would only take the schema module, get the client module and from there, the data loaders
-      OverallClientModule clientModule =
-          new OverallClientModule(Collections.singleton(new PlantClientModule("localhost", PLANT_SERVICE_PORT)));
-      services.add(new GraphQLServer(GRAPHQL_SERVER_PORT, clientModule, schemaModule));
+      GraphQLModuleProvider fullGraphProvider =
+          new FullGraphProvider(Collections.singleton(new PlantModuleProvider("localhost", PLANT_SERVICE_PORT)));
+      services.add(new GraphQLServer(GRAPHQL_SERVER_PORT, fullGraphProvider));
     }
 
     return services;

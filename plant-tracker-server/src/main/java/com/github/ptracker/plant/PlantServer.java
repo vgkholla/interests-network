@@ -15,7 +15,7 @@ import java.util.function.Function;
 public class PlantServer extends GrpcServer {
   private static final String SERVICE_DESCRIPTION = "PlantsService";
 
-  private static final String COSMOS_DB_NAME = "Plants";
+  private static final String COSMOS_DB_NAME = "PlantsTracker";
   private static final String COSMOS_CONTAINER_NAME = "plants";
   private static final String COSMOS_ID_FIELD_NAME = "id";
 

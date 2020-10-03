@@ -4,7 +4,7 @@
 
 Playing with CosmosDB and GraphQL
 
-To try, first create a CosmosDB account that has a Database with name "Plants" and container with name "plants"
+To try, first create a CosmosDB account that has a Database with name "PlantsTracker" and container with name "plants"
 
 Then run
 ```

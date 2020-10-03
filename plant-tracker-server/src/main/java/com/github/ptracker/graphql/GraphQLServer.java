@@ -1,7 +1,6 @@
 package com.github.ptracker.graphql;
 
-import com.github.ptracker.graphql.client.OverallClientModule;
-import com.github.ptracker.graphql.schema.OverallSchemaModule;
+import com.github.ptracker.graphql.api.GraphQLModuleProvider;
 import com.github.ptracker.service.StartStopService;
 import com.google.api.graphql.rejoiner.SchemaProviderModule;
 import com.google.inject.Guice;
@@ -33,10 +32,9 @@ public class GraphQLServer implements StartStopService {
   private final Server _server;
   private final int _port;
 
-  public GraphQLServer(int port, OverallClientModule clientModule, OverallSchemaModule schemaModule) {
-    checkNotNull(clientModule, "Client module cannot be null");
-    checkNotNull(schemaModule, "Schema module cannot be null");
+  public GraphQLServer(int port, GraphQLModuleProvider moduleProvider) {
     checkArgument(port > 0, "Port should be > 0");
+    checkNotNull(moduleProvider, "GraphQLModuleProvider cannot be null");
 
     _port = port;
     _server = new Server(port);
@@ -49,9 +47,9 @@ public class GraphQLServer implements StartStopService {
                                       protected void configureServlets() {
                                         serve("/graphql").with(GraphQLServlet.class);
                                       }
-                                    }, new DataLoaderModule(), new SchemaProviderModule(),
+                                    }, new DataLoaderModule(moduleProvider),
             // Part of Rejoiner framework (Provides `@Schema// GraphQLSchema`)
-            clientModule, schemaModule);
+            new SchemaProviderModule(), moduleProvider.getSchemaModule(), moduleProvider.getClientModule());
       }
     });
 

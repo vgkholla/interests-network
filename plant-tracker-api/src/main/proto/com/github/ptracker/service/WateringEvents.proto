@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.github.ptracker.service";
+option java_outer_classname = "WateringEventProto";
+
+package com.github.ptracker.service;
+
+import "com/github/ptracker/entity/WateringEvent.proto";
+
+service WateringEvent {
+
+  rpc get(WateringEventGetRequest) returns (WateringEventGetResponse) {}
+
+  rpc create(WateringEventCreateRequest) returns (WateringEventCreateResponse) {}
+
+  rpc update(WateringEventUpdateRequest) returns (WateringEventUpdateResponse) {}
+
+  rpc delete(WateringEventDeleteRequest) returns (WateringEventDeleteResponse) {}
+}
+
+message WateringEventGetRequest {
+  string id = 1;
+}
+
+message WateringEventGetResponse {
+  com.github.ptracker.entity.WateringEvent wateringEvent = 1;
+}
+
+message WateringEventCreateRequest {
+  com.github.ptracker.entity.WateringEvent wateringEvent = 1;
+}
+
+message WateringEventCreateResponse {
+}
+
+message WateringEventUpdateRequest {
+  com.github.ptracker.entity.WateringEvent wateringEvent = 1;
+  bool shouldUpsert = 2;
+}
+
+message WateringEventUpdateResponse {
+}
+
+message WateringEventDeleteRequest {
+  string id = 1;
+}
+
+message WateringEventDeleteResponse {
+}

@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.github.ptracker.service";
+option java_outer_classname = "OtherEventProto";
+
+package com.github.ptracker.service;
+
+import "com/github/ptracker/entity/OtherEvent.proto";
+
+service OtherEvent {
+
+  rpc get(OtherEventGetRequest) returns (OtherEventGetResponse) {}
+
+  rpc create(OtherEventCreateRequest) returns (OtherEventCreateResponse) {}
+
+  rpc update(OtherEventUpdateRequest) returns (OtherEventUpdateResponse) {}
+
+  rpc delete(OtherEventDeleteRequest) returns (OtherEventDeleteResponse) {}
+}
+
+message OtherEventGetRequest {
+  string id = 1;
+}
+
+message OtherEventGetResponse {
+  com.github.ptracker.entity.OtherEvent otherEvent = 1;
+}
+
+message OtherEventCreateRequest {
+  com.github.ptracker.entity.OtherEvent otherEvent = 1;
+}
+
+message OtherEventCreateResponse {
+}
+
+message OtherEventUpdateRequest {
+  com.github.ptracker.entity.OtherEvent otherEvent = 1;
+  bool shouldUpsert = 2;
+}
+
+message OtherEventUpdateResponse {
+}
+
+message OtherEventDeleteRequest {
+  string id = 1;
+}
+
+message OtherEventDeleteResponse {
+}

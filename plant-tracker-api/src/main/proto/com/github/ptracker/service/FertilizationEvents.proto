@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.github.ptracker.service";
+option java_outer_classname = "FertilizationEventProto";
+
+package com.github.ptracker.service;
+
+import "com/github/ptracker/entity/FertilizationEvent.proto";
+
+service FertilizationEvent {
+
+  rpc get(FertilizationEventGetRequest) returns (FertilizationEventGetResponse) {}
+
+  rpc create(FertilizationEventCreateRequest) returns (FertilizationEventCreateResponse) {}
+
+  rpc update(FertilizationEventUpdateRequest) returns (FertilizationEventUpdateResponse) {}
+
+  rpc delete(FertilizationEventDeleteRequest) returns (FertilizationEventDeleteResponse) {}
+}
+
+message FertilizationEventGetRequest {
+  string id = 1;
+}
+
+message FertilizationEventGetResponse {
+  com.github.ptracker.entity.FertilizationEvent fertilizationEvent = 1;
+}
+
+message FertilizationEventCreateRequest {
+  com.github.ptracker.entity.FertilizationEvent fertilizationEvent = 1;
+}
+
+message FertilizationEventCreateResponse {
+}
+
+message FertilizationEventUpdateRequest {
+  com.github.ptracker.entity.FertilizationEvent fertilizationEvent = 1;
+  bool shouldUpsert = 2;
+}
+
+message FertilizationEventUpdateResponse {
+}
+
+message FertilizationEventDeleteRequest {
+  string id = 1;
+}
+
+message FertilizationEventDeleteResponse {
+}

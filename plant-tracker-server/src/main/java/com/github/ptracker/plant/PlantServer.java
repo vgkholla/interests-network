@@ -11,6 +11,8 @@ import com.github.ptracker.service.GrpcServer;
 import io.grpc.ServerBuilder;
 import java.util.function.Function;
 
+import static com.github.ptracker.VerifierUtils.*;
+
 
 public class PlantServer extends GrpcServer {
   private static final String SERVICE_DESCRIPTION = "PlantsService";
@@ -24,12 +26,8 @@ public class PlantServer extends GrpcServer {
   }
 
   private static void verifyPlant(Plant plant) {
-    if (plant.getId() == null || plant.getId().isEmpty()) {
-      throw new IllegalArgumentException("Plant does not have an ID");
-    }
-    if (plant.getName() == null || plant.getName().isEmpty()) {
-      throw new IllegalArgumentException("Plant does not have a name");
-    }
+    verifyStringFieldNotNullOrEmpty(plant.getId(), Plant.class.getName(), "id");
+    verifyStringFieldNotNullOrEmpty(plant.getName(), Plant.class.getName(), "name");
   }
 
   private static Resource<String, Plant> getCosmosResource(CosmosClient cosmosClient) {

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package com.github.ptracker.entity;
+
+option java_package = "com.github.ptracker.entity";
+option java_multiple_files = true;
+option java_outer_classname = "WateringEventProto";
+
+import "com/github/ptracker/common/EventMetadata.proto";
+
+message WateringEvent {
+
+  string id = 1;
+
+  int32 quantityMl = 2;
+
+  com.github.ptracker.common.EventMetadata metadata = 3;
+
+  string gardenPlantId = 4;
+}

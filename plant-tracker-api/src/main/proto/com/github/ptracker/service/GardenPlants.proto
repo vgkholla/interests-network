@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.github.ptracker.service";
+option java_outer_classname = "GardenPlantProto";
+
+package com.github.ptracker.service;
+
+import "com/github/ptracker/entity/GardenPlant.proto";
+
+service GardenPlant {
+
+  rpc get(GardenPlantGetRequest) returns (GardenPlantGetResponse) {}
+
+  rpc create(GardenPlantCreateRequest) returns (GardenPlantCreateResponse) {}
+
+  rpc update(GardenPlantUpdateRequest) returns (GardenPlantUpdateResponse) {}
+
+  rpc delete(GardenPlantDeleteRequest) returns (GardenPlantDeleteResponse) {}
+}
+
+message GardenPlantGetRequest {
+  string id = 1;
+}
+
+message GardenPlantGetResponse {
+  com.github.ptracker.entity.GardenPlant gardenPlant = 1;
+}
+
+message GardenPlantCreateRequest {
+  com.github.ptracker.entity.GardenPlant gardenPlant = 1;
+}
+
+message GardenPlantCreateResponse {
+}
+
+message GardenPlantUpdateRequest {
+  com.github.ptracker.entity.GardenPlant gardenPlant = 1;
+  bool shouldUpsert = 2;
+}
+
+message GardenPlantUpdateResponse {
+}
+
+message GardenPlantDeleteRequest {
+  string id = 1;
+}
+
+message GardenPlantDeleteResponse {
+}

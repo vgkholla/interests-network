@@ -1,0 +1,14 @@
+query getOtherEvent($id: String!) {
+    getOtherEvent(input: { id: $id }) {
+        description
+        metadata {
+            timestamp
+            comment
+            gardener {
+                id
+                firstname
+                lastname
+            }
+        }
+    }
+}

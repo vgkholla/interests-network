@@ -16,6 +16,8 @@ import com.github.ptracker.service.WateringEventGrpc.WateringEventFutureStub;
 import com.github.ptracker.service.WateringEventQueryRequest;
 import com.github.ptracker.service.WateringEventQueryResponse;
 import com.github.ptracker.service.WateringEventUpdateRequest;
+import com.github.ptracker.util.IdGenerator;
+import com.github.ptracker.util.RandomStringIdGenerator;
 import com.google.api.graphql.rejoiner.Mutation;
 import com.google.api.graphql.rejoiner.Query;
 import com.google.api.graphql.rejoiner.SchemaModification;
@@ -176,6 +178,8 @@ public class WateringEventModuleProvider implements GraphQLModuleProvider {
   }
 
   private static class SchemaModuleImpl extends SchemaModule {
+    private static final String ID_PREFIX = "ptracker:account:";
+    private final IdGenerator<String> _idGenerator = new RandomStringIdGenerator(ID_PREFIX);
 
     @Query("getWateringEvent")
     ListenableFuture<WateringEvent> getWateringEvent(WateringEventGetRequest request,
@@ -188,7 +192,14 @@ public class WateringEventModuleProvider implements GraphQLModuleProvider {
     @Mutation("createWateringEvent")
     ListenableFuture<WateringEvent> createWateringEvent(WateringEventCreateRequest request,
         WateringEventFutureStub client) {
-      return Futures.transform(client.create(request), ignored -> request.getWateringEvent(),
+      if (request.getWateringEvent().getId() == null || request.getWateringEvent().getId().isEmpty()) {
+        String id = _idGenerator.getNextId();
+        request = WateringEventCreateRequest.newBuilder(request)
+            .setWateringEvent(WateringEvent.newBuilder(request.getWateringEvent()).setId(id))
+            .build();
+      }
+      WateringEventCreateRequest finalRequest = request;
+      return Futures.transform(client.create(request), ignored -> finalRequest.getWateringEvent(),
           MoreExecutors.directExecutor());
     }
 

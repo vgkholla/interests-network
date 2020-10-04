@@ -1,0 +1,13 @@
+mutation createWateringEvent($quantityMl: Int!, $gardenPlantId: String!, $gardenerId: String!, $timestamp: Long!, $comment: String) {
+    createWateringEvent(input: { wateringEvent: {
+        quantityMl: $quantityMl,
+        gardenPlantId: $gardenPlantId,
+        metadata: {
+            gardenerId: $gardenerId,
+            timestamp: $timestamp,
+            comment: $comment
+        }
+    }}) {
+        id
+    }
+}

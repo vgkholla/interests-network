@@ -1,0 +1,13 @@
+mutation createOtherEvent($description: String!, $gardenPlantId: String!, $gardenerId: String!, $timestamp: Long!, $comment: String) {
+    createOtherEvent(input: { otherEvent: {
+        description: $description,
+        gardenPlantId: $gardenPlantId,
+        metadata: {
+            gardenerId: $gardenerId,
+            timestamp: $timestamp,
+            comment: $comment
+        }
+    }}) {
+        id
+    }
+}

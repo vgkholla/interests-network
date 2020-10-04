@@ -16,6 +16,8 @@ import com.github.ptracker.service.OtherEventGrpc.OtherEventFutureStub;
 import com.github.ptracker.service.OtherEventQueryRequest;
 import com.github.ptracker.service.OtherEventQueryResponse;
 import com.github.ptracker.service.OtherEventUpdateRequest;
+import com.github.ptracker.util.IdGenerator;
+import com.github.ptracker.util.RandomStringIdGenerator;
 import com.google.api.graphql.rejoiner.Mutation;
 import com.google.api.graphql.rejoiner.Query;
 import com.google.api.graphql.rejoiner.SchemaModification;
@@ -176,6 +178,8 @@ public class OtherEventModuleProvider implements GraphQLModuleProvider {
   }
 
   private static class SchemaModuleImpl extends SchemaModule {
+    private static final String ID_PREFIX = "ptracker:account:";
+    private final IdGenerator<String> _idGenerator = new RandomStringIdGenerator(ID_PREFIX);
 
     @Query("getOtherEvent")
     ListenableFuture<OtherEvent> getOtherEvent(OtherEventGetRequest request,
@@ -186,7 +190,14 @@ public class OtherEventModuleProvider implements GraphQLModuleProvider {
     // TODO: return needs to be "empty" or "success/failure"
     @Mutation("createOtherEvent")
     ListenableFuture<OtherEvent> createOtherEvent(OtherEventCreateRequest request, OtherEventFutureStub client) {
-      return Futures.transform(client.create(request), ignored -> request.getOtherEvent(),
+      if (request.getOtherEvent().getId() == null || request.getOtherEvent().getId().isEmpty()) {
+        String id = _idGenerator.getNextId();
+        request = OtherEventCreateRequest.newBuilder(request)
+            .setOtherEvent(OtherEvent.newBuilder(request.getOtherEvent()).setId(id))
+            .build();
+      }
+      OtherEventCreateRequest finalRequest = request;
+      return Futures.transform(client.create(request), ignored -> finalRequest.getOtherEvent(),
           MoreExecutors.directExecutor());
     }
 

@@ -1,0 +1,18 @@
+query getGardenPlant($id: String!) {
+    getGardenPlant(input: { id: $id }) {
+        name
+        plant {
+            id
+            name
+        }
+        fertilizationEvents {
+            id
+        }
+        wateringEvents {
+            id
+        }
+        otherEvents {
+            id
+        }
+    }
+}

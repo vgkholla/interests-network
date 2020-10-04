@@ -1,0 +1,13 @@
+mutation createFertilizationEvent($quantityMg: Int!, $gardenPlantId: String!, $gardenerId: String!, $timestamp: Long!, $comment: String) {
+    createFertilizationEvent(input: { fertilizationEvent: {
+        quantityMg: $quantityMg,
+        gardenPlantId: $gardenPlantId,
+        metadata: {
+            gardenerId: $gardenerId,
+            timestamp: $timestamp,
+            comment: $comment
+        }
+    }}) {
+        id
+    }
+}

@@ -1,0 +1,14 @@
+query getFertilizationEvent($id: String!) {
+    getFertilizationEvent(input: { id: $id }) {
+        quantitymg
+        metadata {
+            timestamp
+            comment
+            gardener {
+                id
+                firstname
+                lastname
+            }
+        }
+    }
+}

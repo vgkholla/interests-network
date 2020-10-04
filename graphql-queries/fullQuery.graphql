@@ -1,0 +1,65 @@
+query fullQuery($accountId: String!){
+    getAccount(input: {id: $accountId}) {
+        name
+        gardens {
+            account {
+                name
+            }
+            name
+            gardenPlants {
+                garden {
+                    name
+                }
+                name
+                plant {
+                    name
+                    gardenPlants {
+                        name
+                    }
+                }
+                wateringEvents {
+                    quantityml
+                    metadata {
+                        gardener {
+                            firstname
+                            wateringEvents {
+                                quantityml
+                            }
+                        }
+                    }
+                    gardenPlant {
+                        name
+                    }
+                }
+                fertilizationEvents {
+                    quantitymg
+                    metadata {
+                        gardener {
+                            firstname
+                            fertilizationEvents {
+                                quantitymg
+                            }
+                        }
+                    }
+                    gardenPlant {
+                        name
+                    }
+                }
+                otherEvents {
+                    description
+                    metadata {
+                        gardener {
+                            firstname
+                            otherGardenPlantEvents {
+                                description
+                            }
+                        }
+                    }
+                    gardenPlant {
+                        name
+                    }
+                }
+            }
+        }
+    }
+}

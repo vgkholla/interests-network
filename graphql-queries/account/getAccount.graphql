@@ -1,0 +1,9 @@
+query getAccount($id: String!) {
+    getAccount(input: { id: $id }) {
+        name
+        gardens {
+            id
+            name
+        }
+    }
+}

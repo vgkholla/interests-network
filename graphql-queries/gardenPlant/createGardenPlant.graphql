@@ -1,0 +1,9 @@
+mutation createGardenPlant($name: String!, $gardenId: String!, $plantId: String!) {
+    createGardenPlant(input: { gardenPlant: {
+        name: $name,
+        gardenId: $gardenId,
+        plantId: $plantId
+    }}) {
+        id
+    }
+}

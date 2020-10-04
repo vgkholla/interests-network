@@ -15,6 +15,8 @@ import com.github.ptracker.service.GardenerGrpc;
 import com.github.ptracker.service.GardenerGrpc.GardenerBlockingStub;
 import com.github.ptracker.service.GardenerGrpc.GardenerFutureStub;
 import com.github.ptracker.service.GardenerUpdateRequest;
+import com.github.ptracker.util.IdGenerator;
+import com.github.ptracker.util.RandomStringIdGenerator;
 import com.google.api.graphql.rejoiner.Mutation;
 import com.google.api.graphql.rejoiner.Query;
 import com.google.api.graphql.rejoiner.SchemaModification;
@@ -114,6 +116,8 @@ public class GardenerModuleProvider implements GraphQLModuleProvider {
   }
 
   private static class SchemaModuleImpl extends SchemaModule {
+    private static final String ID_PREFIX = "ptracker:account:";
+    private final IdGenerator<String> _idGenerator = new RandomStringIdGenerator(ID_PREFIX);
 
     @Query("getGardener")
     ListenableFuture<Gardener> getGardener(GardenerGetRequest request,
@@ -124,7 +128,14 @@ public class GardenerModuleProvider implements GraphQLModuleProvider {
     // TODO: return needs to be "empty" or "success/failure"
     @Mutation("createGardener")
     ListenableFuture<Gardener> createGardener(GardenerCreateRequest request, GardenerFutureStub client) {
-      return Futures.transform(client.create(request), ignored -> request.getGardener(),
+      if (request.getGardener().getId() == null || request.getGardener().getId().isEmpty()) {
+        String id = _idGenerator.getNextId();
+        request = GardenerCreateRequest.newBuilder(request)
+            .setGardener(Gardener.newBuilder(request.getGardener()).setId(id))
+            .build();
+      }
+      GardenerCreateRequest finalRequest = request;
+      return Futures.transform(client.create(request), ignored -> finalRequest.getGardener(),
           MoreExecutors.directExecutor());
     }
 

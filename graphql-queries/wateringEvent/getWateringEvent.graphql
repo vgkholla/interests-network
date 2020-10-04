@@ -1,0 +1,14 @@
+query getWateringEvent($id: String!) {
+    getWateringEvent(input: { id: $id }) {
+        quantityml
+        metadata {
+            timestamp
+            comment
+            gardener {
+                id
+                firstname
+                lastname
+            }
+        }
+    }
+}

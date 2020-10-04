@@ -16,6 +16,8 @@ import com.github.ptracker.service.FertilizationEventGrpc.FertilizationEventFutu
 import com.github.ptracker.service.FertilizationEventQueryRequest;
 import com.github.ptracker.service.FertilizationEventQueryResponse;
 import com.github.ptracker.service.FertilizationEventUpdateRequest;
+import com.github.ptracker.util.IdGenerator;
+import com.github.ptracker.util.RandomStringIdGenerator;
 import com.google.api.graphql.rejoiner.Mutation;
 import com.google.api.graphql.rejoiner.Query;
 import com.google.api.graphql.rejoiner.SchemaModification;
@@ -179,6 +181,8 @@ public class FertilizationEventModuleProvider implements GraphQLModuleProvider {
   }
 
   private static class SchemaModuleImpl extends SchemaModule {
+    private static final String ID_PREFIX = "ptracker:account:";
+    private final IdGenerator<String> _idGenerator = new RandomStringIdGenerator(ID_PREFIX);
 
     @Query("getFertilizationEvent")
     ListenableFuture<FertilizationEvent> getFertilizationEvent(FertilizationEventGetRequest request,
@@ -191,7 +195,14 @@ public class FertilizationEventModuleProvider implements GraphQLModuleProvider {
     @Mutation("createFertilizationEvent")
     ListenableFuture<FertilizationEvent> createFertilizationEvent(FertilizationEventCreateRequest request,
         FertilizationEventFutureStub client) {
-      return Futures.transform(client.create(request), ignored -> request.getFertilizationEvent(),
+      if (request.getFertilizationEvent().getId() == null || request.getFertilizationEvent().getId().isEmpty()) {
+        String id = _idGenerator.getNextId();
+        request = FertilizationEventCreateRequest.newBuilder(request)
+            .setFertilizationEvent(FertilizationEvent.newBuilder(request.getFertilizationEvent()).setId(id))
+            .build();
+      }
+      FertilizationEventCreateRequest finalRequest = request;
+      return Futures.transform(client.create(request), ignored -> finalRequest.getFertilizationEvent(),
           MoreExecutors.directExecutor());
     }
 

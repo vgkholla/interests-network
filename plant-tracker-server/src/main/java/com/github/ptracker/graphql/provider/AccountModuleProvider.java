@@ -13,6 +13,9 @@ import com.github.ptracker.service.AccountGrpc;
 import com.github.ptracker.service.AccountGrpc.AccountBlockingStub;
 import com.github.ptracker.service.AccountGrpc.AccountFutureStub;
 import com.github.ptracker.service.AccountUpdateRequest;
+import com.github.ptracker.util.IdGenerator;
+import com.github.ptracker.util.RandomLongIdGenerator;
+import com.github.ptracker.util.RandomStringIdGenerator;
 import com.google.api.graphql.rejoiner.Mutation;
 import com.google.api.graphql.rejoiner.Query;
 import com.google.api.graphql.rejoiner.SchemaModification;
@@ -106,12 +109,14 @@ public class AccountModuleProvider implements GraphQLModuleProvider {
     static CompletableFuture<Account> getAccount(DataFetchingEnvironment environment, String id) {
       checkNotNull(environment, "DataFetchingEnvironment cannot be null");
       checkNotNull(id, "Account ID cannot be null");
-      return environment.<DataLoaderRegistry>getContext().<String, Account>getDataLoader(GET_BY_ID_DATA_LOADER_NAME).load(
-          id);
+      return environment.<DataLoaderRegistry>getContext().<String, Account>getDataLoader(
+          GET_BY_ID_DATA_LOADER_NAME).load(id);
     }
   }
 
   private static class SchemaModuleImpl extends SchemaModule {
+    private static final String ID_PREFIX = "ptracker:account:";
+    private final IdGenerator<String> _idGenerator = new RandomStringIdGenerator(ID_PREFIX);
 
     @Query("getAccount")
     ListenableFuture<Account> getAccount(AccountGetRequest request, DataFetchingEnvironment dataFetchingEnvironment) {
@@ -121,7 +126,15 @@ public class AccountModuleProvider implements GraphQLModuleProvider {
     // TODO: return needs to be "empty" or "success/failure"
     @Mutation("createAccount")
     ListenableFuture<Account> createAccount(AccountCreateRequest request, AccountFutureStub client) {
-      return Futures.transform(client.create(request), ignored -> request.getAccount(), MoreExecutors.directExecutor());
+      if (request.getAccount().getId() == null || request.getAccount().getId().isEmpty()) {
+        String id = _idGenerator.getNextId();
+        request = AccountCreateRequest.newBuilder(request)
+            .setAccount(Account.newBuilder(request.getAccount()).setId(id))
+            .build();
+      }
+      AccountCreateRequest finalRequest = request;
+      return Futures.transform(client.create(request), ignored -> finalRequest.getAccount(),
+          MoreExecutors.directExecutor());
     }
 
     // TODO: return needs to be "empty" or "success/failure"

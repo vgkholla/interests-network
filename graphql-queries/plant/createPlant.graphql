@@ -1,0 +1,7 @@
+mutation createPlant($name: String!) {
+    createPlant(input: { plant: {
+        name: $name
+    }}) {
+        id
+    }
+}

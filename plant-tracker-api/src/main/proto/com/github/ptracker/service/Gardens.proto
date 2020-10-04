@@ -12,6 +12,8 @@ service Garden {
 
   rpc get(GardenGetRequest) returns (GardenGetResponse) {}
 
+  rpc query(GardenQueryRequest) returns (GardenQueryResponse) {}
+
   rpc create(GardenCreateRequest) returns (GardenCreateResponse) {}
 
   rpc update(GardenUpdateRequest) returns (GardenUpdateResponse) {}
@@ -25,6 +27,14 @@ message GardenGetRequest {
 
 message GardenGetResponse {
   com.github.ptracker.entity.Garden garden = 1;
+}
+
+message GardenQueryRequest {
+  com.github.ptracker.entity.Garden template = 1;
+}
+
+message GardenQueryResponse {
+  repeated com.github.ptracker.entity.Garden garden = 1;
 }
 
 message GardenCreateRequest {

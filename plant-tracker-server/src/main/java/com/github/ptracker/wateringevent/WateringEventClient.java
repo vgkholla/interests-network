@@ -5,14 +5,17 @@ import com.github.ptracker.resource.CreateRequestOptions;
 import com.github.ptracker.resource.DeleteRequestOptions;
 import com.github.ptracker.resource.GetRequestOptions;
 import com.github.ptracker.resource.GrpcResource;
+import com.github.ptracker.resource.QueryRequestOptions;
 import com.github.ptracker.resource.UpdateRequestOptions;
 import com.github.ptracker.service.WateringEventCreateRequest;
 import com.github.ptracker.service.WateringEventDeleteRequest;
 import com.github.ptracker.service.WateringEventGetRequest;
 import com.github.ptracker.service.WateringEventGrpc;
 import com.github.ptracker.service.WateringEventGrpc.WateringEventBlockingStub;
+import com.github.ptracker.service.WateringEventQueryRequest;
 import com.github.ptracker.service.WateringEventUpdateRequest;
 import io.grpc.ManagedChannelBuilder;
+import java.util.List;
 
 
 public class WateringEventClient implements GrpcResource.GrpcClient<String, WateringEvent> {
@@ -33,6 +36,12 @@ public class WateringEventClient implements GrpcResource.GrpcClient<String, Wate
   }
 
   @Override
+  public List<WateringEvent> query(WateringEvent template, QueryRequestOptions options) {
+    WateringEventQueryRequest request = WateringEventQueryRequest.newBuilder().setTemplate(template).build();
+    return _blockingStub.query(request).getWateringEventList();
+  }
+
+  @Override
   public void create(WateringEvent payload, CreateRequestOptions options) {
     WateringEventCreateRequest request = WateringEventCreateRequest.newBuilder().setWateringEvent(payload).build();
     _blockingStub.create(request);
@@ -40,8 +49,10 @@ public class WateringEventClient implements GrpcResource.GrpcClient<String, Wate
 
   @Override
   public void update(WateringEvent payload, UpdateRequestOptions options) {
-    WateringEventUpdateRequest request =
-        WateringEventUpdateRequest.newBuilder().setWateringEvent(payload).setShouldUpsert(options.shouldUpsert()).build();
+    WateringEventUpdateRequest request = WateringEventUpdateRequest.newBuilder()
+        .setWateringEvent(payload)
+        .setShouldUpsert(options.shouldUpsert())
+        .build();
     _blockingStub.update(request);
   }
 

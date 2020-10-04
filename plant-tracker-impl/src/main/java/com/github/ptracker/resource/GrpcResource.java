@@ -1,7 +1,9 @@
 package com.github.ptracker.resource;
 
 import io.grpc.StatusRuntimeException;
-import java.util.Optional;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -15,16 +17,32 @@ public class GrpcResource<KEY_TYPE, VALUE_TYPE> implements Resource<KEY_TYPE, VA
   }
 
   @Override
-  public ResourceResponse<Optional<VALUE_TYPE>> get(KEY_TYPE key, GetRequestOptions options) {
-    checkArgument(key != null, "keyu cannot be null");
-    Optional<VALUE_TYPE> value = Optional.empty();
+  public ResourceResponse<VALUE_TYPE> get(KEY_TYPE key, GetRequestOptions options) {
+    checkNotNull(key, "key cannot be null");
+    VALUE_TYPE value = null;
     ResponseStatus status = ResponseStatus.OK;
     try {
-      value = Optional.of(_grpcClient.get(key, options));
+      value = _grpcClient.get(key, options);
     } catch (StatusRuntimeException e) {
       status = ResponseStatus.fromGrpcStatus(e.getStatus());
     }
-    return new ResourceResponseImpl.Builder<Optional<VALUE_TYPE>>().status(status).payload(value).build();
+    return new ResourceResponseImpl.Builder<VALUE_TYPE>().status(status).payload(value).build();
+  }
+
+  @Override
+  public List<ResourceResponse<VALUE_TYPE>> query(VALUE_TYPE template, QueryRequestOptions options) {
+    checkNotNull(template, "template cannot be null");
+    List<VALUE_TYPE> values = Collections.emptyList();
+    ResponseStatus status = ResponseStatus.OK;
+    try {
+      values = _grpcClient.query(template, options);
+    } catch (StatusRuntimeException e) {
+      status = ResponseStatus.fromGrpcStatus(e.getStatus());
+    }
+    ResponseStatus finalStatus = status;
+    return values.stream()
+        .map(value -> new ResourceResponseImpl.Builder<VALUE_TYPE>().status(finalStatus).payload(value).build())
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -53,7 +71,7 @@ public class GrpcResource<KEY_TYPE, VALUE_TYPE> implements Resource<KEY_TYPE, VA
 
   @Override
   public ResourceResponse<Void> delete(KEY_TYPE key, DeleteRequestOptions options) {
-    checkArgument(key != null, "keyu cannot be null");
+    checkNotNull(key, "key cannot be null");
     ResponseStatus status = ResponseStatus.OK;
     try {
       _grpcClient.delete(key, options);
@@ -66,6 +84,8 @@ public class GrpcResource<KEY_TYPE, VALUE_TYPE> implements Resource<KEY_TYPE, VA
   public interface GrpcClient<KEY_TYPE, VALUE_TYPE> {
 
     VALUE_TYPE get(KEY_TYPE key, GetRequestOptions options);
+
+    List<VALUE_TYPE> query(VALUE_TYPE template, QueryRequestOptions options);
 
     void create(VALUE_TYPE payload, CreateRequestOptions options);
 

@@ -5,14 +5,17 @@ import com.github.ptracker.resource.CreateRequestOptions;
 import com.github.ptracker.resource.DeleteRequestOptions;
 import com.github.ptracker.resource.GetRequestOptions;
 import com.github.ptracker.resource.GrpcResource;
+import com.github.ptracker.resource.QueryRequestOptions;
 import com.github.ptracker.resource.UpdateRequestOptions;
 import com.github.ptracker.service.GardenPlantCreateRequest;
 import com.github.ptracker.service.GardenPlantDeleteRequest;
 import com.github.ptracker.service.GardenPlantGetRequest;
 import com.github.ptracker.service.GardenPlantGrpc;
 import com.github.ptracker.service.GardenPlantGrpc.GardenPlantBlockingStub;
+import com.github.ptracker.service.GardenPlantQueryRequest;
 import com.github.ptracker.service.GardenPlantUpdateRequest;
 import io.grpc.ManagedChannelBuilder;
+import java.util.List;
 
 
 public class GardenPlantClient implements GrpcResource.GrpcClient<String, GardenPlant> {
@@ -30,6 +33,12 @@ public class GardenPlantClient implements GrpcResource.GrpcClient<String, Garden
   public GardenPlant get(String key, GetRequestOptions options) {
     GardenPlantGetRequest request = GardenPlantGetRequest.newBuilder().setId(key).build();
     return _blockingStub.get(request).getGardenPlant();
+  }
+
+  @Override
+  public List<GardenPlant> query(GardenPlant template, QueryRequestOptions options) {
+    GardenPlantQueryRequest request = GardenPlantQueryRequest.newBuilder().setTemplate(template).build();
+    return _blockingStub.query(request).getGardenPlantList();
   }
 
   @Override

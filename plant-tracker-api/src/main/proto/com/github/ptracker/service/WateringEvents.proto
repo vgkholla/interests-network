@@ -12,6 +12,8 @@ service WateringEvent {
 
   rpc get(WateringEventGetRequest) returns (WateringEventGetResponse) {}
 
+  rpc query(WateringEventQueryRequest) returns (WateringEventQueryResponse) {}
+
   rpc create(WateringEventCreateRequest) returns (WateringEventCreateResponse) {}
 
   rpc update(WateringEventUpdateRequest) returns (WateringEventUpdateResponse) {}
@@ -25,6 +27,14 @@ message WateringEventGetRequest {
 
 message WateringEventGetResponse {
   com.github.ptracker.entity.WateringEvent wateringEvent = 1;
+}
+
+message WateringEventQueryRequest {
+  com.github.ptracker.entity.WateringEvent template = 1;
+}
+
+message WateringEventQueryResponse {
+  repeated com.github.ptracker.entity.WateringEvent wateringEvent = 1;
 }
 
 message WateringEventCreateRequest {

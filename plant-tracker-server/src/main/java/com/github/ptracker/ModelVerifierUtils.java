@@ -3,7 +3,7 @@ package com.github.ptracker;
 import com.github.ptracker.common.EventMetadata;
 
 
-public class VerifierUtils {
+public class ModelVerifierUtils {
 
   public static void verifyStringFieldNotNullOrEmpty(String fieldValue, String entityName, String fieldName) {
     if (fieldValue == null || fieldValue.isEmpty()) {
@@ -29,5 +29,9 @@ public class VerifierUtils {
     }
     verifyStringFieldNotNullOrEmpty(metadata.getGardenerId(), entityName, fieldName + "/gardenerId");
     verifyLongNotNegative(metadata.getTimestamp(), entityName, fieldName + "/timestamp");
+  }
+
+  private ModelVerifierUtils() {
+
   }
 }

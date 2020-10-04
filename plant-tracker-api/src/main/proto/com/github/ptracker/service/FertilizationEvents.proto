@@ -12,6 +12,8 @@ service FertilizationEvent {
 
   rpc get(FertilizationEventGetRequest) returns (FertilizationEventGetResponse) {}
 
+  rpc query(FertilizationEventQueryRequest) returns (FertilizationEventQueryResponse) {}
+
   rpc create(FertilizationEventCreateRequest) returns (FertilizationEventCreateResponse) {}
 
   rpc update(FertilizationEventUpdateRequest) returns (FertilizationEventUpdateResponse) {}
@@ -25,6 +27,14 @@ message FertilizationEventGetRequest {
 
 message FertilizationEventGetResponse {
   com.github.ptracker.entity.FertilizationEvent fertilizationEvent = 1;
+}
+
+message FertilizationEventQueryRequest {
+  com.github.ptracker.entity.FertilizationEvent template = 1;
+}
+
+message FertilizationEventQueryResponse {
+  repeated com.github.ptracker.entity.FertilizationEvent fertilizationEvent = 1;
 }
 
 message FertilizationEventCreateRequest {

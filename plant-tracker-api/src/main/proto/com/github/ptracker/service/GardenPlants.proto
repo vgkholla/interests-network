@@ -12,6 +12,8 @@ service GardenPlant {
 
   rpc get(GardenPlantGetRequest) returns (GardenPlantGetResponse) {}
 
+  rpc query(GardenPlantQueryRequest) returns (GardenPlantQueryResponse) {}
+
   rpc create(GardenPlantCreateRequest) returns (GardenPlantCreateResponse) {}
 
   rpc update(GardenPlantUpdateRequest) returns (GardenPlantUpdateResponse) {}
@@ -25,6 +27,14 @@ message GardenPlantGetRequest {
 
 message GardenPlantGetResponse {
   com.github.ptracker.entity.GardenPlant gardenPlant = 1;
+}
+
+message GardenPlantQueryRequest {
+  com.github.ptracker.entity.GardenPlant template = 1;
+}
+
+message GardenPlantQueryResponse {
+  repeated com.github.ptracker.entity.GardenPlant gardenPlant = 1;
 }
 
 message GardenPlantCreateRequest {

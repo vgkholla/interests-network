@@ -5,14 +5,17 @@ import com.github.ptracker.resource.CreateRequestOptions;
 import com.github.ptracker.resource.DeleteRequestOptions;
 import com.github.ptracker.resource.GetRequestOptions;
 import com.github.ptracker.resource.GrpcResource;
+import com.github.ptracker.resource.QueryRequestOptions;
 import com.github.ptracker.resource.UpdateRequestOptions;
 import com.github.ptracker.service.GardenerCreateRequest;
 import com.github.ptracker.service.GardenerDeleteRequest;
 import com.github.ptracker.service.GardenerGetRequest;
 import com.github.ptracker.service.GardenerGrpc;
 import com.github.ptracker.service.GardenerGrpc.GardenerBlockingStub;
+import com.github.ptracker.service.GardenerQueryRequest;
 import com.github.ptracker.service.GardenerUpdateRequest;
 import io.grpc.ManagedChannelBuilder;
+import java.util.List;
 
 
 public class GardenerClient implements GrpcResource.GrpcClient<String, Gardener> {
@@ -30,6 +33,12 @@ public class GardenerClient implements GrpcResource.GrpcClient<String, Gardener>
   public Gardener get(String key, GetRequestOptions options) {
     GardenerGetRequest request = GardenerGetRequest.newBuilder().setId(key).build();
     return _blockingStub.get(request).getGardener();
+  }
+
+  @Override
+  public List<Gardener> query(Gardener template, QueryRequestOptions options) {
+    GardenerQueryRequest request = GardenerQueryRequest.newBuilder().setTemplate(template).build();
+    return _blockingStub.query(request).getGardenerList();
   }
 
   @Override

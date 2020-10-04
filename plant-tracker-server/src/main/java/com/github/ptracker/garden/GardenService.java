@@ -1,9 +1,10 @@
 package com.github.ptracker.garden;
 
+import com.github.ptracker.StreamObserverConverter;
 import com.github.ptracker.entity.Garden;
 import com.github.ptracker.resource.CreateRequestOptionsImpl;
 import com.github.ptracker.resource.DeleteRequestOptionsImpl;
-import com.github.ptracker.resource.GetRequestOptionsImpl;
+import com.github.ptracker.resource.QueryRequestOptionsImpl;
 import com.github.ptracker.resource.Resource;
 import com.github.ptracker.resource.ResourceResponse;
 import com.github.ptracker.resource.ResponseStatus;
@@ -15,12 +16,15 @@ import com.github.ptracker.service.GardenDeleteResponse;
 import com.github.ptracker.service.GardenGetRequest;
 import com.github.ptracker.service.GardenGetResponse;
 import com.github.ptracker.service.GardenGrpc.GardenImplBase;
+import com.github.ptracker.service.GardenQueryRequest;
+import com.github.ptracker.service.GardenQueryResponse;
 import com.github.ptracker.service.GardenUpdateRequest;
 import com.github.ptracker.service.GardenUpdateResponse;
+import com.google.common.collect.Iterables;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import java.util.Optional;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -39,14 +43,36 @@ public class GardenService extends GardenImplBase {
           new StatusRuntimeException(Status.FAILED_PRECONDITION.augmentDescription("Garden ID is missing")));
     } else {
       // TODO: add metadata
-      ResourceResponse<Optional<Garden>> response =
-          _gardenResource.get(request.getId(), new GetRequestOptionsImpl.Builder().build());
-      if (response.getPayload().isPresent()) {
-        responseObserver.onNext(GardenGetResponse.newBuilder().setGarden(response.getPayload().get()).build());
+      GardenQueryRequest gardenQueryRequest =
+          GardenQueryRequest.newBuilder().setTemplate(Garden.newBuilder().setId(request.getId())).build();
+      query(gardenQueryRequest, new StreamObserverConverter<>(responseObserver, gardenQueryResponse -> {
+        Garden garden = Iterables.getOnlyElement(gardenQueryResponse.getGardenList());
+        responseObserver.onNext(GardenGetResponse.newBuilder().setGarden(garden).build());
+      }));
+    }
+  }
+
+  @Override
+  public void query(GardenQueryRequest request, StreamObserver<GardenQueryResponse> responseObserver) {
+    if (request.getTemplate() == null) {
+      responseObserver.onError(
+          new StatusRuntimeException(Status.FAILED_PRECONDITION.augmentDescription("Template is missing")));
+    } else {
+      // TODO: add metadata
+      List<ResourceResponse<Garden>> responses =
+          _gardenResource.query(request.getTemplate(), new QueryRequestOptionsImpl.Builder().build());
+      GardenQueryResponse.Builder responseBuilder = GardenQueryResponse.newBuilder();
+      if (!responses.isEmpty()) {
+        responses.forEach(response -> {
+          if (response.getStatus().equals(ResponseStatus.OK)) {
+            responseBuilder.addGarden(response.getPayload());
+          }
+        });
+        responseObserver.onNext(responseBuilder.build());
         responseObserver.onCompleted();
       } else {
-        responseObserver.onError(
-            new StatusRuntimeException(Status.NOT_FOUND.augmentDescription("Did not find " + request.getId())));
+        responseObserver.onError(new StatusRuntimeException(
+            Status.NOT_FOUND.augmentDescription("Did not find anything matching " + request.getTemplate())));
       }
     }
   }
@@ -57,7 +83,8 @@ public class GardenService extends GardenImplBase {
       responseObserver.onError(
           new StatusRuntimeException(Status.FAILED_PRECONDITION.augmentDescription("Garden is missing")));
     } else {
-      ResourceResponse<Void> createResponse = _gardenResource.create(request.getGarden(), new CreateRequestOptionsImpl());
+      ResourceResponse<Void> createResponse =
+          _gardenResource.create(request.getGarden(), new CreateRequestOptionsImpl());
       if (ResponseStatus.OK.equals(createResponse.getStatus())) {
         responseObserver.onNext(GardenCreateResponse.newBuilder().build());
         responseObserver.onCompleted();

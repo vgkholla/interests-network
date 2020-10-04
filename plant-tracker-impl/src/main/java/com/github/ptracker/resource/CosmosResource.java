@@ -11,7 +11,6 @@ import com.github.ptracker.storage.cosmos.CosmosDBMetadataHandler;
 import com.github.ptracker.storage.cosmos.CosmosDBQuery;
 import com.google.common.collect.Iterables;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -40,13 +39,11 @@ public class CosmosResource<KEY_TYPE, VALUE_TYPE> implements Resource<KEY_TYPE, 
   private final CosmosDBQuery _cosmosDBQuery;
 
   private final CosmosDBMetadataHandler _metadataHandler = new CosmosDBMetadataHandler();
-  private final ResourceResponse<Optional<VALUE_TYPE>> _noMatch =
-      new ResourceResponseImpl.Builder<Optional<VALUE_TYPE>>().payload(Optional.empty()).build();
+  private final ResourceResponse<VALUE_TYPE> _noMatch =
+      new ResourceResponseImpl.Builder<VALUE_TYPE>().status(ResponseStatus.NOT_FOUND).build();
 
-
-  public CosmosResource(CosmosContainer container,
-      DataInterchange<ObjectNode, VALUE_TYPE> dataInterchange, Function<KEY_TYPE, VALUE_TYPE> valueWithIdOnlyCreator,
-      Consumer<VALUE_TYPE> valueVerifier) {
+  public CosmosResource(CosmosContainer container, DataInterchange<ObjectNode, VALUE_TYPE> dataInterchange,
+      Function<KEY_TYPE, VALUE_TYPE> valueWithIdOnlyCreator, Consumer<VALUE_TYPE> valueVerifier) {
     _container = checkNotNull(container, "CosmosContainer cannot be null");
     _dataInterchange = checkNotNull(dataInterchange, "DataInterchange cannot be null");
     _valueWithIdOnlyCreator = checkNotNull(valueWithIdOnlyCreator, "valueWithIdOnlyCreator cannot be null");
@@ -59,19 +56,25 @@ public class CosmosResource<KEY_TYPE, VALUE_TYPE> implements Resource<KEY_TYPE, 
   //       updateItem(differentItem) // without setting part key
   //       fails (and same for multithreading)
   @Override
-  public ResourceResponse<Optional<VALUE_TYPE>> get(KEY_TYPE key, GetRequestOptions options) {
-    checkArgument(key != null, "key cannot be null");
+  public ResourceResponse<VALUE_TYPE> get(KEY_TYPE key, GetRequestOptions options) {
+    checkNotNull(key, "key cannot be null");
     LOGGER.debug("Getting {}", key);
-    ObjectNode node = _dataInterchange.convertBackward(_valueWithIdOnlyCreator.apply(key));
-    List<ResourceResponseImpl<Optional<VALUE_TYPE>>> matchingResults =
-        _cosmosDBQuery.getResults(node, DEFAULT_QUERY_REQUEST_OPTIONS)
-            .stream()
-            .map(item -> new ResourceResponseImpl.Builder<Optional<VALUE_TYPE>>().payload(
-                Optional.of(_dataInterchange.convertForward(item)))
-                .metadata(_metadataHandler.getStorageMetadata(item))
-                .build())
-            .collect(Collectors.toList());
-    return matchingResults.isEmpty() ? _noMatch : Iterables.getOnlyElement(matchingResults);
+    List<ResourceResponse<VALUE_TYPE>> results = query(_valueWithIdOnlyCreator.apply(key),
+        new QueryRequestOptionsImpl.Builder().getRequestOptions(options).build());
+    return results.isEmpty() ? _noMatch : Iterables.getOnlyElement(results);
+  }
+
+  @Override
+  public List<ResourceResponse<VALUE_TYPE>> query(VALUE_TYPE template, QueryRequestOptions options) {
+    checkArgument(template != null, "template cannot be null");
+    LOGGER.debug("Getting values that match the template {}", template);
+    ObjectNode node = _dataInterchange.convertBackward(template);
+    return _cosmosDBQuery.getResults(node, DEFAULT_QUERY_REQUEST_OPTIONS)
+        .stream()
+        .map(item -> new ResourceResponseImpl.Builder<VALUE_TYPE>().payload(_dataInterchange.convertForward(item))
+            .metadata(_metadataHandler.getStorageMetadata(item))
+            .build())
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -80,7 +83,6 @@ public class CosmosResource<KEY_TYPE, VALUE_TYPE> implements Resource<KEY_TYPE, 
     _valueVerifier.accept(payload);
     LOGGER.debug("Creating {}", payload);
     ObjectNode item = _dataInterchange.convertBackward(payload);
-
 
     CosmosItemResponse<ObjectNode> createResponse = _container.createItem(item, DEFAULT_ITEM_REQUEST_OPTIONS);
     ResponseStatus responseStatus = createResponse.getStatusCode() == CREATE_SUCCESS_STATUS_CODE ? ResponseStatus.OK
@@ -110,7 +112,7 @@ public class CosmosResource<KEY_TYPE, VALUE_TYPE> implements Resource<KEY_TYPE, 
 
   @Override
   public ResourceResponse<Void> delete(KEY_TYPE key, DeleteRequestOptions options) {
-    checkArgument(key != null, "key cannot be null");
+    checkNotNull(key, "key cannot be null");
     LOGGER.debug("Deleting {}", key);
     VALUE_TYPE payload = _valueWithIdOnlyCreator.apply(key);
     ObjectNode objectNode = _dataInterchange.convertBackward(payload);

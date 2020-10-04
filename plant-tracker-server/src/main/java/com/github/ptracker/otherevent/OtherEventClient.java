@@ -5,14 +5,17 @@ import com.github.ptracker.resource.CreateRequestOptions;
 import com.github.ptracker.resource.DeleteRequestOptions;
 import com.github.ptracker.resource.GetRequestOptions;
 import com.github.ptracker.resource.GrpcResource;
+import com.github.ptracker.resource.QueryRequestOptions;
 import com.github.ptracker.resource.UpdateRequestOptions;
 import com.github.ptracker.service.OtherEventCreateRequest;
 import com.github.ptracker.service.OtherEventDeleteRequest;
 import com.github.ptracker.service.OtherEventGetRequest;
 import com.github.ptracker.service.OtherEventGrpc;
 import com.github.ptracker.service.OtherEventGrpc.OtherEventBlockingStub;
+import com.github.ptracker.service.OtherEventQueryRequest;
 import com.github.ptracker.service.OtherEventUpdateRequest;
 import io.grpc.ManagedChannelBuilder;
+import java.util.List;
 
 
 public class OtherEventClient implements GrpcResource.GrpcClient<String, OtherEvent> {
@@ -30,6 +33,12 @@ public class OtherEventClient implements GrpcResource.GrpcClient<String, OtherEv
   public OtherEvent get(String key, GetRequestOptions options) {
     OtherEventGetRequest request = OtherEventGetRequest.newBuilder().setId(key).build();
     return _blockingStub.get(request).getOtherEvent();
+  }
+
+  @Override
+  public List<OtherEvent> query(OtherEvent template, QueryRequestOptions options) {
+    OtherEventQueryRequest request = OtherEventQueryRequest.newBuilder().setTemplate(template).build();
+    return _blockingStub.query(request).getOtherEventList();
   }
 
   @Override

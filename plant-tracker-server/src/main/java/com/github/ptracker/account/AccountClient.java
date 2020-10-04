@@ -5,14 +5,17 @@ import com.github.ptracker.resource.CreateRequestOptions;
 import com.github.ptracker.resource.DeleteRequestOptions;
 import com.github.ptracker.resource.GetRequestOptions;
 import com.github.ptracker.resource.GrpcResource;
+import com.github.ptracker.resource.QueryRequestOptions;
 import com.github.ptracker.resource.UpdateRequestOptions;
 import com.github.ptracker.service.AccountCreateRequest;
 import com.github.ptracker.service.AccountDeleteRequest;
 import com.github.ptracker.service.AccountGetRequest;
 import com.github.ptracker.service.AccountGrpc;
 import com.github.ptracker.service.AccountGrpc.AccountBlockingStub;
+import com.github.ptracker.service.AccountQueryRequest;
 import com.github.ptracker.service.AccountUpdateRequest;
 import io.grpc.ManagedChannelBuilder;
+import java.util.List;
 
 
 public class AccountClient implements GrpcResource.GrpcClient<String, Account> {
@@ -30,6 +33,12 @@ public class AccountClient implements GrpcResource.GrpcClient<String, Account> {
   public Account get(String key, GetRequestOptions options) {
     AccountGetRequest request = AccountGetRequest.newBuilder().setId(key).build();
     return _blockingStub.get(request).getAccount();
+  }
+
+  @Override
+  public List<Account> query(Account template, QueryRequestOptions options) {
+    AccountQueryRequest request = AccountQueryRequest.newBuilder().setTemplate(template).build();
+    return _blockingStub.query(request).getAccountList();
   }
 
   @Override

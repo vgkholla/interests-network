@@ -1,14 +1,15 @@
 package com.github.ptracker.graphql.api;
 
 import com.google.inject.Module;
+import java.util.Optional;
 import org.dataloader.DataLoaderRegistry;
 
 
 public interface GraphQLModuleProvider {
 
-  Module getClientModule();
+  Optional<Module> getClientModule();
 
-  Module getSchemaModule();
+  Optional<Module> getSchemaModule();
 
   void registerDataLoaders(DataLoaderRegistry registry);
 }

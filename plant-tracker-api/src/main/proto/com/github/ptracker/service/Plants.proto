@@ -12,6 +12,8 @@ service Plant {
 
   rpc get(PlantGetRequest) returns (PlantGetResponse) {}
 
+  rpc query(PlantQueryRequest) returns (PlantQueryResponse) {}
+
   rpc create(PlantCreateRequest) returns (PlantCreateResponse) {}
 
   rpc update(PlantUpdateRequest) returns (PlantUpdateResponse) {}
@@ -25,6 +27,14 @@ message PlantGetRequest {
 
 message PlantGetResponse {
   com.github.ptracker.entity.Plant plant = 1;
+}
+
+message PlantQueryRequest {
+  com.github.ptracker.entity.Plant template = 1;
+}
+
+message PlantQueryResponse {
+  repeated com.github.ptracker.entity.Plant plant = 1;
 }
 
 message PlantCreateRequest {

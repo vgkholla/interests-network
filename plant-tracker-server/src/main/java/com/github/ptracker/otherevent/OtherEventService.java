@@ -1,9 +1,10 @@
 package com.github.ptracker.otherevent;
 
+import com.github.ptracker.StreamObserverConverter;
 import com.github.ptracker.entity.OtherEvent;
 import com.github.ptracker.resource.CreateRequestOptionsImpl;
 import com.github.ptracker.resource.DeleteRequestOptionsImpl;
-import com.github.ptracker.resource.GetRequestOptionsImpl;
+import com.github.ptracker.resource.QueryRequestOptionsImpl;
 import com.github.ptracker.resource.Resource;
 import com.github.ptracker.resource.ResourceResponse;
 import com.github.ptracker.resource.ResponseStatus;
@@ -15,12 +16,15 @@ import com.github.ptracker.service.OtherEventDeleteResponse;
 import com.github.ptracker.service.OtherEventGetRequest;
 import com.github.ptracker.service.OtherEventGetResponse;
 import com.github.ptracker.service.OtherEventGrpc.OtherEventImplBase;
+import com.github.ptracker.service.OtherEventQueryRequest;
+import com.github.ptracker.service.OtherEventQueryResponse;
 import com.github.ptracker.service.OtherEventUpdateRequest;
 import com.github.ptracker.service.OtherEventUpdateResponse;
+import com.google.common.collect.Iterables;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import java.util.Optional;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -39,14 +43,36 @@ public class OtherEventService extends OtherEventImplBase {
           new StatusRuntimeException(Status.FAILED_PRECONDITION.augmentDescription("OtherEvent ID is missing")));
     } else {
       // TODO: add metadata
-      ResourceResponse<Optional<OtherEvent>> response =
-          _otherEventResource.get(request.getId(), new GetRequestOptionsImpl.Builder().build());
-      if (response.getPayload().isPresent()) {
-        responseObserver.onNext(OtherEventGetResponse.newBuilder().setOtherEvent(response.getPayload().get()).build());
+      OtherEventQueryRequest otherEventQueryRequest =
+          OtherEventQueryRequest.newBuilder().setTemplate(OtherEvent.newBuilder().setId(request.getId())).build();
+      query(otherEventQueryRequest, new StreamObserverConverter<>(responseObserver, otherEventQueryResponse -> {
+        OtherEvent otherEvent = Iterables.getOnlyElement(otherEventQueryResponse.getOtherEventList());
+        responseObserver.onNext(OtherEventGetResponse.newBuilder().setOtherEvent(otherEvent).build());
+        }));
+    }
+  }
+
+  @Override
+  public void query(OtherEventQueryRequest request, StreamObserver<OtherEventQueryResponse> responseObserver) {
+    if (request.getTemplate() == null) {
+      responseObserver.onError(
+          new StatusRuntimeException(Status.FAILED_PRECONDITION.augmentDescription("Template is missing")));
+    } else {
+      // TODO: add metadata
+      List<ResourceResponse<OtherEvent>> responses =
+          _otherEventResource.query(request.getTemplate(), new QueryRequestOptionsImpl.Builder().build());
+      OtherEventQueryResponse.Builder responseBuilder = OtherEventQueryResponse.newBuilder();
+      if (!responses.isEmpty()) {
+        responses.forEach(response -> {
+          if (response.getStatus().equals(ResponseStatus.OK)) {
+            responseBuilder.addOtherEvent(response.getPayload());
+          }
+        });
+        responseObserver.onNext(responseBuilder.build());
         responseObserver.onCompleted();
       } else {
-        responseObserver.onError(
-            new StatusRuntimeException(Status.NOT_FOUND.augmentDescription("Did not find " + request.getId())));
+        responseObserver.onError(new StatusRuntimeException(
+            Status.NOT_FOUND.augmentDescription("Did not find anything matching " + request.getTemplate())));
       }
     }
   }
@@ -57,7 +83,8 @@ public class OtherEventService extends OtherEventImplBase {
       responseObserver.onError(
           new StatusRuntimeException(Status.FAILED_PRECONDITION.augmentDescription("OtherEvent is missing")));
     } else {
-      ResourceResponse<Void> createResponse = _otherEventResource.create(request.getOtherEvent(), new CreateRequestOptionsImpl());
+      ResourceResponse<Void> createResponse =
+          _otherEventResource.create(request.getOtherEvent(), new CreateRequestOptionsImpl());
       if (ResponseStatus.OK.equals(createResponse.getStatus())) {
         responseObserver.onNext(OtherEventCreateResponse.newBuilder().build());
         responseObserver.onCompleted();

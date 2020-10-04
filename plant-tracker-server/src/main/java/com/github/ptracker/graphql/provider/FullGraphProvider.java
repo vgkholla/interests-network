@@ -4,6 +4,7 @@ import com.github.ptracker.graphql.api.GraphQLModuleProvider;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.dataloader.DataLoaderRegistry;
 
@@ -18,23 +19,25 @@ public class FullGraphProvider implements GraphQLModuleProvider {
   public FullGraphProvider(Collection<GraphQLModuleProvider> providers) {
     _providers = checkNotNull(providers, "Providers cannot be null");
     Collection<Module> clientModules = providers.stream()
-        .map(provider -> checkNotNull(provider.getClientModule(), "Client module cannot be null"))
+        .filter(provider -> provider.getClientModule().isPresent())
+        .map(provider -> provider.getClientModule().get())
         .collect(Collectors.toList());
     _clientModules = new ModuleCollection(clientModules);
     Collection<Module> schemaModules = providers.stream()
-        .map(provider -> checkNotNull(provider.getSchemaModule(), "Schema module cannot be null"))
+        .filter(provider -> provider.getSchemaModule().isPresent())
+        .map(provider -> provider.getSchemaModule().get())
         .collect(Collectors.toList());
     _schemaModules = new ModuleCollection(schemaModules);
   }
 
   @Override
-  public Module getClientModule() {
-    return _clientModules;
+  public Optional<Module> getClientModule() {
+    return Optional.of(_clientModules);
   }
 
   @Override
-  public Module getSchemaModule() {
-    return _schemaModules;
+  public Optional<Module> getSchemaModule() {
+    return Optional.of(_schemaModules);
   }
 
   @Override

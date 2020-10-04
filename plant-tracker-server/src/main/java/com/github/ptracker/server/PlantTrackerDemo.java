@@ -13,6 +13,7 @@ import com.github.ptracker.gardenplant.GardenPlantServer;
 import com.github.ptracker.graphql.GraphQLServer;
 import com.github.ptracker.graphql.api.GraphQLModuleProvider;
 import com.github.ptracker.graphql.provider.AccountModuleProvider;
+import com.github.ptracker.graphql.provider.EventMetadataModuleProvider;
 import com.github.ptracker.graphql.provider.FertilizationEventModuleProvider;
 import com.github.ptracker.graphql.provider.FullGraphProvider;
 import com.github.ptracker.graphql.provider.GardenModuleProvider;
@@ -37,7 +38,6 @@ import com.github.ptracker.wateringevent.WateringEventServer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -65,6 +65,7 @@ public class PlantTrackerDemo implements AutoCloseable {
   private static final String OPT_COSMOS_DB_ACCOUNT_ENDPOINT = "cosmosDBAccountEndpoint";
   private static final String OPT_COSMOS_DB_ACCOUNT_KEY = "cosmosDBAccountKey";
   private static final String OPT_COSMOS_DB_PREFERRED_REGIONS = "cosmosDBPreferredRegions";
+  private static final String OPT_GQL_SERVER_STATIC_RESOURCES_PATH = "graphQLServerStaticResourcesPath";
 
   // ports
   private static final int GRAPHQL_SERVER_PORT = 8080;
@@ -102,21 +103,20 @@ public class PlantTrackerDemo implements AutoCloseable {
 
   private CosmosClient createCosmosClient(CosmosDBConfiguration configuration) {
     checkNotNull(configuration, "CosmosDBConfiguration cannot be null");
-    checkArgument(
-        configuration.getCosmosDBAccountEndpoint() != null && !configuration.getCosmosDBAccountEndpoint().isEmpty(),
+    checkArgument(configuration.getAccountEndpoint() != null && !configuration.getAccountEndpoint().isEmpty(),
         "Need a CosmosDB account endpoint");
-    checkArgument(configuration.getCosmosDBAccountKey() != null && !configuration.getCosmosDBAccountKey().isEmpty(),
+    checkArgument(configuration.getAccountKey() != null && !configuration.getAccountKey().isEmpty(),
         "Need a CosmosDB account key");
     checkArgument(configuration.getPreferredRegionsList() != null && !configuration.getPreferredRegionsList().isEmpty(),
         "Need CosmosDB preferred regions");
-    return new CosmosClientBuilder().endpoint(configuration.getCosmosDBAccountEndpoint())
-        .key(configuration.getCosmosDBAccountKey())
+    return new CosmosClientBuilder().endpoint(configuration.getAccountEndpoint())
+        .key(configuration.getAccountKey())
         .preferredRegions(configuration.getPreferredRegionsList())
         .consistencyLevel(ConsistencyLevel.SESSION)
         .buildClient();
   }
 
-  private List<StartStopService> createServices() {
+  private List<StartStopService> createServices(GraphQLServerConfiguration graphQLServerConfiguration) {
     List<StartStopService> services = new ArrayList<>();
 
     // servers
@@ -133,6 +133,7 @@ public class PlantTrackerDemo implements AutoCloseable {
       // GraphQL module providers
       List<GraphQLModuleProvider> moduleProviders = new ArrayList<>();
 
+      // entitites
       moduleProviders.add(new AccountModuleProvider("localhost", ACCOUNT_SERVICE_PORT));
       moduleProviders.add(new FertilizationEventModuleProvider("localhost", FERTILIZATION_EVENT_SERVICE_PORT));
       moduleProviders.add(new GardenModuleProvider("localhost", GARDEN_SERVICE_PORT));
@@ -142,9 +143,13 @@ public class PlantTrackerDemo implements AutoCloseable {
       moduleProviders.add(new PlantModuleProvider("localhost", PLANT_SERVICE_PORT));
       moduleProviders.add(new WateringEventModuleProvider("localhost", WATERING_EVENT_SERVICE_PORT));
 
+      // common models
+      moduleProviders.add(new EventMetadataModuleProvider());
+
       // graphql server
       GraphQLModuleProvider fullGraphProvider = new FullGraphProvider(moduleProviders);
-      services.add(new GraphQLServer(GRAPHQL_SERVER_PORT, fullGraphProvider));
+      services.add(new GraphQLServer(GRAPHQL_SERVER_PORT, fullGraphProvider,
+          graphQLServerConfiguration.getStaticResourcesPath()));
     }
 
     return services;
@@ -153,7 +158,7 @@ public class PlantTrackerDemo implements AutoCloseable {
   private PlantTrackerDemo(PlantTrackerServerInitializationParams params) throws IOException {
     checkNotNull(params, "Initialization params cannot be null");
     _cosmosClient = createCosmosClient(params.getCosmosDBConfiguration());
-    _services = createServices();
+    _services = createServices(params.getGraphQLServerConfiguration());
 
     for (StartStopService service : _services) {
       service.start();
@@ -193,10 +198,12 @@ public class PlantTrackerDemo implements AutoCloseable {
     CommandLineParser parser = new DefaultParser();
     Options options = new Options();
     getCosmosDBOptions().getOptions().forEach(options::addOption);
+    getGQLServerOptions().getOptions().forEach(options::addOption);
     CommandLine commandLine = parser.parse(options, args);
 
     PlantTrackerServerInitializationParams.Builder builder = PlantTrackerServerInitializationParams.newBuilder();
     builder.setCosmosDBConfiguration(getCosmosDBConfiguration(commandLine));
+    builder.setGraphQLServerConfiguration(getGraphQLServerConfiguration(commandLine));
     return builder.build();
   }
 
@@ -229,11 +236,30 @@ public class PlantTrackerDemo implements AutoCloseable {
 
   private static CosmosDBConfiguration getCosmosDBConfiguration(CommandLine commandLine) {
     CosmosDBConfiguration.Builder builder = CosmosDBConfiguration.newBuilder();
-    builder.setCosmosDBAccountEndpoint(commandLine.getOptionValue(OPT_COSMOS_DB_ACCOUNT_ENDPOINT));
-    builder.setCosmosDBAccountKey(commandLine.getOptionValue(OPT_COSMOS_DB_ACCOUNT_KEY));
+    builder.setAccountEndpoint(commandLine.getOptionValue(OPT_COSMOS_DB_ACCOUNT_ENDPOINT));
+    builder.setAccountKey(commandLine.getOptionValue(OPT_COSMOS_DB_ACCOUNT_KEY));
     for (String region : commandLine.getOptionValues(OPT_COSMOS_DB_PREFERRED_REGIONS)) {
       builder.addPreferredRegions(region);
     }
+    return builder.build();
+  }
+
+  private static Options getGQLServerOptions() {
+    Options options = new Options();
+    options.addOption(Option.builder()
+        .longOpt(OPT_GQL_SERVER_STATIC_RESOURCES_PATH)
+        .desc("Path to static resources that the GraphQL server will serve")
+        .required(false)
+        .hasArg()
+        .argName("GQL_SERVER_STATIC_RESOURCES_PATH")
+        .build());
+    return options;
+  }
+
+  private static GraphQLServerConfiguration getGraphQLServerConfiguration(CommandLine commandLine) {
+    GraphQLServerConfiguration.Builder builder = GraphQLServerConfiguration.newBuilder();
+    String staticResourcesPath = commandLine.getOptionValue(OPT_GQL_SERVER_STATIC_RESOURCES_PATH, "src/main/resources");
+    builder.setStaticResourcesPath(staticResourcesPath);
     return builder.build();
   }
 
@@ -254,12 +280,12 @@ public class PlantTrackerDemo implements AutoCloseable {
     StorageMetadata metadata = createResponse.getStorageMetadata();
     // get the plant
     LOGGER.info("Fetching created plant");
-    ResourceResponse<Optional<Plant>> getAfterCreateResponse =
+    ResourceResponse<Plant> getAfterCreateResponse =
         plantResource.get(plantId, new GetRequestOptionsImpl.Builder().metadata(metadata).build());
-    getAfterCreateResponse.getPayload().map(payload -> {
-      LOGGER.info("Fetched plant [\n{}]", getAfterCreateResponse.getPayload().orElse(null));
-      return payload;
-    }).orElseThrow(() -> new IllegalStateException("Could not fetch plant"));
+    if (getAfterCreateResponse.getStatus().equals(ResponseStatus.NOT_FOUND)) {
+      throw new IllegalStateException("Could not fetch plant");
+    }
+    LOGGER.info("Fetched plant [\n{}]", getAfterCreateResponse.getPayload());
 
     // update the plant
     metadata = getAfterCreateResponse.getStorageMetadata();
@@ -276,12 +302,12 @@ public class PlantTrackerDemo implements AutoCloseable {
     // get the plant
     metadata = updateResponse.getStorageMetadata();
     LOGGER.info("Fetching updated plant");
-    ResourceResponse<Optional<Plant>> getAfterUpdateResponse =
+    ResourceResponse<Plant> getAfterUpdateResponse =
         plantResource.get(plantId, new GetRequestOptionsImpl.Builder().metadata(metadata).build());
-    getAfterUpdateResponse.getPayload().map(payload -> {
-      LOGGER.info("Fetched plant [\n{}]", getAfterUpdateResponse.getPayload().orElse(null));
-      return payload;
-    }).orElseThrow(() -> new IllegalStateException("Could not fetch plant"));
+    if (getAfterCreateResponse.getStatus().equals(ResponseStatus.NOT_FOUND)) {
+      throw new IllegalStateException("Could not fetch plant");
+    }
+    LOGGER.info("Fetched plant [\n{}]", getAfterUpdateResponse.getPayload());
 
     // delete the plant
     metadata = getAfterUpdateResponse.getStorageMetadata();

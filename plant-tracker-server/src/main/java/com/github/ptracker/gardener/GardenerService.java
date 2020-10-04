@@ -1,13 +1,20 @@
 package com.github.ptracker.gardener;
 
+import com.github.ptracker.StreamObserverConverter;
+import com.github.ptracker.entity.Gardener;
 import com.github.ptracker.entity.Gardener;
 import com.github.ptracker.resource.CreateRequestOptionsImpl;
 import com.github.ptracker.resource.DeleteRequestOptionsImpl;
 import com.github.ptracker.resource.GetRequestOptionsImpl;
+import com.github.ptracker.resource.QueryRequestOptionsImpl;
 import com.github.ptracker.resource.Resource;
 import com.github.ptracker.resource.ResourceResponse;
 import com.github.ptracker.resource.ResponseStatus;
 import com.github.ptracker.resource.UpdateRequestOptionsImpl;
+import com.github.ptracker.service.GardenerGetRequest;
+import com.github.ptracker.service.GardenerGetResponse;
+import com.github.ptracker.service.GardenerQueryRequest;
+import com.github.ptracker.service.GardenerQueryResponse;
 import com.github.ptracker.service.GardenerCreateRequest;
 import com.github.ptracker.service.GardenerCreateResponse;
 import com.github.ptracker.service.GardenerDeleteRequest;
@@ -17,9 +24,11 @@ import com.github.ptracker.service.GardenerGetResponse;
 import com.github.ptracker.service.GardenerGrpc.GardenerImplBase;
 import com.github.ptracker.service.GardenerUpdateRequest;
 import com.github.ptracker.service.GardenerUpdateResponse;
+import com.google.common.collect.Iterables;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.*;
@@ -39,14 +48,36 @@ public class GardenerService extends GardenerImplBase {
           new StatusRuntimeException(Status.FAILED_PRECONDITION.augmentDescription("Gardener ID is missing")));
     } else {
       // TODO: add metadata
-      ResourceResponse<Optional<Gardener>> response =
-          _gardenerResource.get(request.getId(), new GetRequestOptionsImpl.Builder().build());
-      if (response.getPayload().isPresent()) {
-        responseObserver.onNext(GardenerGetResponse.newBuilder().setGardener(response.getPayload().get()).build());
+      GardenerQueryRequest gardenerQueryRequest =
+          GardenerQueryRequest.newBuilder().setTemplate(Gardener.newBuilder().setId(request.getId())).build();
+      query(gardenerQueryRequest, new StreamObserverConverter<>(responseObserver, gardenerQueryResponse -> {
+        Gardener gardener = Iterables.getOnlyElement(gardenerQueryResponse.getGardenerList());
+        responseObserver.onNext(GardenerGetResponse.newBuilder().setGardener(gardener).build());
+        }));
+    }
+  }
+
+  @Override
+  public void query(GardenerQueryRequest request, StreamObserver<GardenerQueryResponse> responseObserver) {
+    if (request.getTemplate() == null) {
+      responseObserver.onError(
+          new StatusRuntimeException(Status.FAILED_PRECONDITION.augmentDescription("Template is missing")));
+    } else {
+      // TODO: add metadata
+      List<ResourceResponse<Gardener>> responses =
+          _gardenerResource.query(request.getTemplate(), new QueryRequestOptionsImpl.Builder().build());
+      GardenerQueryResponse.Builder responseBuilder = GardenerQueryResponse.newBuilder();
+      if (!responses.isEmpty()) {
+        responses.forEach(response -> {
+          if (response.getStatus().equals(ResponseStatus.OK)) {
+            responseBuilder.addGardener(response.getPayload());
+          }
+        });
+        responseObserver.onNext(responseBuilder.build());
         responseObserver.onCompleted();
       } else {
-        responseObserver.onError(
-            new StatusRuntimeException(Status.NOT_FOUND.augmentDescription("Did not find " + request.getId())));
+        responseObserver.onError(new StatusRuntimeException(
+            Status.NOT_FOUND.augmentDescription("Did not find anything matching " + request.getTemplate())));
       }
     }
   }

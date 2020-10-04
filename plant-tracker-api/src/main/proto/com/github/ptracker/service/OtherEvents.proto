@@ -12,6 +12,8 @@ service OtherEvent {
 
   rpc get(OtherEventGetRequest) returns (OtherEventGetResponse) {}
 
+  rpc query(OtherEventQueryRequest) returns (OtherEventQueryResponse) {}
+
   rpc create(OtherEventCreateRequest) returns (OtherEventCreateResponse) {}
 
   rpc update(OtherEventUpdateRequest) returns (OtherEventUpdateResponse) {}
@@ -25,6 +27,14 @@ message OtherEventGetRequest {
 
 message OtherEventGetResponse {
   com.github.ptracker.entity.OtherEvent otherEvent = 1;
+}
+
+message OtherEventQueryRequest {
+  com.github.ptracker.entity.OtherEvent template = 1;
+}
+
+message OtherEventQueryResponse {
+  repeated com.github.ptracker.entity.OtherEvent otherEvent = 1;
 }
 
 message OtherEventCreateRequest {

@@ -32,7 +32,7 @@ public class GraphQLServer implements StartStopService {
   private final Server _server;
   private final int _port;
 
-  public GraphQLServer(int port, GraphQLModuleProvider moduleProvider) {
+  public GraphQLServer(int port, GraphQLModuleProvider moduleProvider, String staticResourcesPath) {
     checkArgument(port > 0, "Port should be > 0");
     checkNotNull(moduleProvider, "GraphQLModuleProvider cannot be null");
 
@@ -49,13 +49,16 @@ public class GraphQLServer implements StartStopService {
                                       }
                                     }, new DataLoaderModule(moduleProvider),
             // Part of Rejoiner framework (Provides `@Schema// GraphQLSchema`)
-            new SchemaProviderModule(), moduleProvider.getSchemaModule(), moduleProvider.getClientModule());
+            new SchemaProviderModule(), moduleProvider.getSchemaModule()
+                .orElseThrow(() -> new IllegalArgumentException("Schema Module must be present")),
+            moduleProvider.getClientModule()
+                .orElseThrow(() -> new IllegalArgumentException("Client Module must be present")));
       }
     });
 
     context.addFilter(GuiceFilter.class, "/*", EnumSet.of(REQUEST, ASYNC));
     try {
-      context.setBaseResource(new PathResource(new File("./src/main/resources").toPath().toRealPath()));
+      context.setBaseResource(new PathResource(new File(staticResourcesPath).toPath().toRealPath()));
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }

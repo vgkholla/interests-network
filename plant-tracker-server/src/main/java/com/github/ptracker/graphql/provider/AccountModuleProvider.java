@@ -1,17 +1,21 @@
 package com.github.ptracker.graphql.provider;
 
 import com.github.ptracker.entity.Account;
+import com.github.ptracker.entity.Garden;
+import com.github.ptracker.graphql.GrpcNotFoundSwallower;
 import com.github.ptracker.graphql.api.GraphQLModuleProvider;
 import com.github.ptracker.service.AccountCreateRequest;
 import com.github.ptracker.service.AccountDeleteRequest;
 import com.github.ptracker.service.AccountDeleteResponse;
 import com.github.ptracker.service.AccountGetRequest;
+import com.github.ptracker.service.AccountGetResponse;
 import com.github.ptracker.service.AccountGrpc;
 import com.github.ptracker.service.AccountGrpc.AccountBlockingStub;
 import com.github.ptracker.service.AccountGrpc.AccountFutureStub;
 import com.github.ptracker.service.AccountUpdateRequest;
 import com.google.api.graphql.rejoiner.Mutation;
 import com.google.api.graphql.rejoiner.Query;
+import com.google.api.graphql.rejoiner.SchemaModification;
 import com.google.api.graphql.rejoiner.SchemaModule;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -21,18 +25,21 @@ import com.google.inject.Module;
 import graphql.schema.DataFetchingEnvironment;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 
+import static com.github.ptracker.graphql.GraphQLVerifierUtils.*;
 import static com.google.common.base.Preconditions.*;
 
 
 public class AccountModuleProvider implements GraphQLModuleProvider {
-  public static final String BATCH_GET_DATA_LOADER_NAME = "accounts";
   private final ClientModule _clientModule;
   private final Module _schemaModule = new SchemaModuleImpl();
 
@@ -41,13 +48,13 @@ public class AccountModuleProvider implements GraphQLModuleProvider {
   }
 
   @Override
-  public Module getClientModule() {
-    return _clientModule;
+  public Optional<Module> getClientModule() {
+    return Optional.of(_clientModule);
   }
 
   @Override
-  public Module getSchemaModule() {
-    return _schemaModule;
+  public Optional<Module> getSchemaModule() {
+    return Optional.of(_schemaModule);
   }
 
   @Override
@@ -55,7 +62,13 @@ public class AccountModuleProvider implements GraphQLModuleProvider {
     _clientModule.registerDataLoaders(registry);
   }
 
+  public static CompletableFuture<Account> getAccount(DataFetchingEnvironment environment, String id) {
+    return ClientModule.getAccount(environment, id);
+  }
+
   private static class ClientModule extends AbstractModule {
+    private static final String GET_BY_ID_DATA_LOADER_NAME = "accounts";
+
     private final String _host;
     private final int _port;
 
@@ -76,15 +89,25 @@ public class AccountModuleProvider implements GraphQLModuleProvider {
     }
 
     void registerDataLoaders(DataLoaderRegistry registry) {
-      BatchLoader<String, Account> batchLoader = ids -> {
+      verifyDataLoaderRegistryKeysUnassigned(registry, Collections.singletonList(GET_BY_ID_DATA_LOADER_NAME));
+      GrpcNotFoundSwallower<String, AccountGetResponse> idToAccount =
+          new GrpcNotFoundSwallower<>(id -> _futureStub.get(AccountGetRequest.newBuilder().setId(id).build()));
+      BatchLoader<String, Account> byIdLoader = ids -> {
         List<ListenableFuture<Account>> futures = ids.stream()
-            .map(id -> Futures.transform(_futureStub.get(AccountGetRequest.newBuilder().setId(ids.get(0)).build()),
+            .map(id -> Futures.transform(idToAccount.apply(id),
                 response -> response != null ? response.getAccount() : null, MoreExecutors.directExecutor()))
             .collect(Collectors.toList());
         ListenableFuture<List<Account>> listenableFuture = Futures.allAsList(futures);
         return FutureConverter.toCompletableFuture(listenableFuture);
       };
-      registry.register(BATCH_GET_DATA_LOADER_NAME, new DataLoader<>(batchLoader));
+      registry.register(GET_BY_ID_DATA_LOADER_NAME, new DataLoader<>(byIdLoader));
+    }
+
+    static CompletableFuture<Account> getAccount(DataFetchingEnvironment environment, String id) {
+      checkNotNull(environment, "DataFetchingEnvironment cannot be null");
+      checkNotNull(id, "Account ID cannot be null");
+      return environment.<DataLoaderRegistry>getContext().<String, Account>getDataLoader(GET_BY_ID_DATA_LOADER_NAME).load(
+          id);
     }
   }
 
@@ -92,9 +115,7 @@ public class AccountModuleProvider implements GraphQLModuleProvider {
 
     @Query("getAccount")
     ListenableFuture<Account> getAccount(AccountGetRequest request, DataFetchingEnvironment dataFetchingEnvironment) {
-      return FutureConverter.toListenableFuture(
-          dataFetchingEnvironment.<DataLoaderRegistry>getContext().<String, Account>getDataLoader(
-              BATCH_GET_DATA_LOADER_NAME).load(request.getId()));
+      return FutureConverter.toListenableFuture(ClientModule.getAccount(dataFetchingEnvironment, request.getId()));
     }
 
     // TODO: return needs to be "empty" or "success/failure"
@@ -113,6 +134,12 @@ public class AccountModuleProvider implements GraphQLModuleProvider {
     @Mutation("deleteAccount")
     ListenableFuture<AccountDeleteResponse> deleteAccount(AccountDeleteRequest request, AccountFutureStub client) {
       return client.delete(request);
+    }
+
+    @SchemaModification(addField = "gardens", onType = Account.class)
+    ListenableFuture<List<Garden>> accountToGardens(Account account, DataFetchingEnvironment environment) {
+      return FutureConverter.toListenableFuture(
+          GardenModuleProvider.getGardensByAccountId(environment, account.getId()));
     }
   }
 }

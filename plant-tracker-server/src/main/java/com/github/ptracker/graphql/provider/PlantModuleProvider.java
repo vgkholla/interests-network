@@ -1,17 +1,21 @@
 package com.github.ptracker.graphql.provider;
 
+import com.github.ptracker.entity.GardenPlant;
 import com.github.ptracker.entity.Plant;
+import com.github.ptracker.graphql.GrpcNotFoundSwallower;
 import com.github.ptracker.graphql.api.GraphQLModuleProvider;
 import com.github.ptracker.service.PlantCreateRequest;
 import com.github.ptracker.service.PlantDeleteRequest;
 import com.github.ptracker.service.PlantDeleteResponse;
 import com.github.ptracker.service.PlantGetRequest;
+import com.github.ptracker.service.PlantGetResponse;
 import com.github.ptracker.service.PlantGrpc;
 import com.github.ptracker.service.PlantGrpc.PlantBlockingStub;
 import com.github.ptracker.service.PlantGrpc.PlantFutureStub;
 import com.github.ptracker.service.PlantUpdateRequest;
 import com.google.api.graphql.rejoiner.Mutation;
 import com.google.api.graphql.rejoiner.Query;
+import com.google.api.graphql.rejoiner.SchemaModification;
 import com.google.api.graphql.rejoiner.SchemaModule;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -21,18 +25,21 @@ import com.google.inject.Module;
 import graphql.schema.DataFetchingEnvironment;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 
+import static com.github.ptracker.graphql.GraphQLVerifierUtils.*;
 import static com.google.common.base.Preconditions.*;
 
 
 public class PlantModuleProvider implements GraphQLModuleProvider {
-  private static final String BATCH_GET_DATA_LOADER_NAME = "plants";
   private final ClientModule _clientModule;
   private final Module _schemaModule = new SchemaModuleImpl();
 
@@ -41,13 +48,13 @@ public class PlantModuleProvider implements GraphQLModuleProvider {
   }
 
   @Override
-  public Module getClientModule() {
-    return _clientModule;
+  public Optional<Module> getClientModule() {
+    return Optional.of(_clientModule);
   }
 
   @Override
-  public Module getSchemaModule() {
-    return _schemaModule;
+  public Optional<Module> getSchemaModule() {
+    return Optional.of(_schemaModule);
   }
 
   @Override
@@ -55,7 +62,13 @@ public class PlantModuleProvider implements GraphQLModuleProvider {
     _clientModule.registerDataLoaders(registry);
   }
 
+  public static CompletableFuture<Plant> getPlant(DataFetchingEnvironment environment, String id) {
+    return ClientModule.getPlant(environment, id);
+  }
+
   private static class ClientModule extends AbstractModule {
+    private static final String GET_BY_ID_DATA_LOADER_NAME = "plants";
+
     private final String _host;
     private final int _port;
 
@@ -76,16 +89,25 @@ public class PlantModuleProvider implements GraphQLModuleProvider {
     }
 
     void registerDataLoaders(DataLoaderRegistry registry) {
-      BatchLoader<String, Plant> batchLoad = ids -> {
+      verifyDataLoaderRegistryKeysUnassigned(registry, Collections.singletonList(GET_BY_ID_DATA_LOADER_NAME));
+      GrpcNotFoundSwallower<String, PlantGetResponse> idToPlant =
+          new GrpcNotFoundSwallower<>(id -> _futureStub.get(PlantGetRequest.newBuilder().setId(id).build()));
+      BatchLoader<String, Plant> byIdLoader = ids -> {
         List<ListenableFuture<Plant>> futures = ids.stream()
-            .map(id -> Futures.transform(_futureStub.get(PlantGetRequest.newBuilder().setId(ids.get(0)).build()),
-                response -> response != null ? response.getPlant() : null,
+            .map(id -> Futures.transform(idToPlant.apply(id), response -> response != null ? response.getPlant() : null,
                 MoreExecutors.directExecutor()))
             .collect(Collectors.toList());
         ListenableFuture<List<Plant>> listenableFuture = Futures.allAsList(futures);
         return FutureConverter.toCompletableFuture(listenableFuture);
       };
-      registry.register(BATCH_GET_DATA_LOADER_NAME, new DataLoader<>(batchLoad));
+      registry.register(GET_BY_ID_DATA_LOADER_NAME, new DataLoader<>(byIdLoader));
+    }
+
+    static CompletableFuture<Plant> getPlant(DataFetchingEnvironment environment, String id) {
+      checkNotNull(environment, "DataFetchingEnvironment cannot be null");
+      checkNotNull(id, "Plant ID cannot be null");
+      return environment.<DataLoaderRegistry>getContext().<String, Plant>getDataLoader(GET_BY_ID_DATA_LOADER_NAME).load(
+          id);
     }
   }
 
@@ -93,9 +115,7 @@ public class PlantModuleProvider implements GraphQLModuleProvider {
 
     @Query("getPlant")
     ListenableFuture<Plant> getPlant(PlantGetRequest request, DataFetchingEnvironment dataFetchingEnvironment) {
-      return FutureConverter.toListenableFuture(
-          dataFetchingEnvironment.<DataLoaderRegistry>getContext().<String, Plant>getDataLoader(
-              BATCH_GET_DATA_LOADER_NAME).load(request.getId()));
+      return FutureConverter.toListenableFuture(ClientModule.getPlant(dataFetchingEnvironment, request.getId()));
     }
 
     // TODO: return needs to be "empty" or "success/failure"
@@ -114,6 +134,12 @@ public class PlantModuleProvider implements GraphQLModuleProvider {
     @Mutation("deletePlant")
     ListenableFuture<PlantDeleteResponse> deletePlant(PlantDeleteRequest request, PlantFutureStub client) {
       return client.delete(request);
+    }
+
+    @SchemaModification(addField = "gardenPlants", onType = Plant.class)
+    ListenableFuture<List<GardenPlant>> plantToGardenPlants(Plant plant, DataFetchingEnvironment environment) {
+      return FutureConverter.toListenableFuture(
+          GardenPlantModuleProvider.getGardenPlantsByPlantId(environment, plant.getId()));
     }
   }
 }

@@ -11,7 +11,7 @@ import com.github.ptracker.service.GrpcServer;
 import io.grpc.ServerBuilder;
 import java.util.function.Function;
 
-import static com.github.ptracker.VerifierUtils.*;
+import static com.github.ptracker.ModelVerifierUtils.*;
 
 
 public class WateringEventServer extends GrpcServer {

@@ -19,7 +19,6 @@ public class AccountServer extends GrpcServer {
 
   private static final String COSMOS_DB_NAME = "PlantsTracker";
   private static final String COSMOS_CONTAINER_NAME = "accounts";
-  private static final String COSMOS_ID_FIELD_NAME = "id";
 
   public AccountServer(int port, CosmosClient cosmosClient) {
     super(SERVICE_DESCRIPTION, ServerBuilder.forPort(port).addService(new AccountService(getCosmosResource(cosmosClient))));
@@ -34,7 +33,7 @@ public class AccountServer extends GrpcServer {
     DataInterchange<ObjectNode, Account> dataInterchange = new ProtoBufJsonInterchange<>(Account::newBuilder);
     Function<String, Account> valueWithIdOnlyCreator = key -> Account.newBuilder().setId(key).build();
     GrpcCosmosResourceSupplier<String, Account> supplier =
-        new GrpcCosmosResourceSupplier<>(cosmosClient, COSMOS_DB_NAME, COSMOS_CONTAINER_NAME, COSMOS_ID_FIELD_NAME,
+        new GrpcCosmosResourceSupplier<>(cosmosClient, COSMOS_DB_NAME, COSMOS_CONTAINER_NAME,
             dataInterchange, valueWithIdOnlyCreator, AccountServer::verifyAccount);
     return supplier.get();
   }

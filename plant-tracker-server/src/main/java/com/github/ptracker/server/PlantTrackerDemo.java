@@ -3,12 +3,25 @@ package com.github.ptracker.server;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
+import com.github.ptracker.account.AccountServer;
 import com.github.ptracker.common.storage.StorageMetadata;
 import com.github.ptracker.entity.Plant;
-import com.github.ptracker.graphql.provider.FullGraphProvider;
+import com.github.ptracker.fertilizationevent.FertilizationEventServer;
+import com.github.ptracker.garden.GardenServer;
+import com.github.ptracker.gardener.GardenerServer;
+import com.github.ptracker.gardenplant.GardenPlantServer;
 import com.github.ptracker.graphql.GraphQLServer;
 import com.github.ptracker.graphql.api.GraphQLModuleProvider;
+import com.github.ptracker.graphql.provider.AccountModuleProvider;
+import com.github.ptracker.graphql.provider.FertilizationEventModuleProvider;
+import com.github.ptracker.graphql.provider.FullGraphProvider;
+import com.github.ptracker.graphql.provider.GardenModuleProvider;
+import com.github.ptracker.graphql.provider.GardenPlantModuleProvider;
+import com.github.ptracker.graphql.provider.GardenerModuleProvider;
+import com.github.ptracker.graphql.provider.OtherEventModuleProvider;
 import com.github.ptracker.graphql.provider.PlantModuleProvider;
+import com.github.ptracker.graphql.provider.WateringEventModuleProvider;
+import com.github.ptracker.otherevent.OtherEventServer;
 import com.github.ptracker.plant.PlantClient;
 import com.github.ptracker.plant.PlantServer;
 import com.github.ptracker.resource.CreateRequestOptionsImpl;
@@ -20,9 +33,9 @@ import com.github.ptracker.resource.ResourceResponse;
 import com.github.ptracker.resource.ResponseStatus;
 import com.github.ptracker.resource.UpdateRequestOptionsImpl;
 import com.github.ptracker.service.StartStopService;
+import com.github.ptracker.wateringevent.WateringEventServer;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -55,7 +68,14 @@ public class PlantTrackerDemo implements AutoCloseable {
 
   // ports
   private static final int GRAPHQL_SERVER_PORT = 8080;
-  private static final int PLANT_SERVICE_PORT = 30000;
+  private static final int ACCOUNT_SERVICE_PORT = 30000;
+  private static final int FERTILIZATION_EVENT_SERVICE_PORT = 30001;
+  private static final int GARDEN_SERVICE_PORT = 30002;
+  private static final int GARDENER_SERVICE_PORT = 30003;
+  private static final int GARDEN_PLANT_SERVICE_PORT = 30004;
+  private static final int OTHER_EVENT_SERVICE_PORT = 30005;
+  private static final int PLANT_SERVICE_PORT = 30006;
+  private static final int WATERING_EVENT_SERVICE_PORT = 30007;
 
   // cosmos testing
   private static final boolean COSMOS_TESTING = false;
@@ -99,13 +119,31 @@ public class PlantTrackerDemo implements AutoCloseable {
   private List<StartStopService> createServices() {
     List<StartStopService> services = new ArrayList<>();
 
-    // plants backend
+    // servers
+    services.add(new AccountServer(ACCOUNT_SERVICE_PORT, _cosmosClient));
+    services.add(new FertilizationEventServer(FERTILIZATION_EVENT_SERVICE_PORT, _cosmosClient));
+    services.add(new GardenServer(GARDEN_SERVICE_PORT, _cosmosClient));
+    services.add(new GardenerServer(GARDENER_SERVICE_PORT, _cosmosClient));
+    services.add(new GardenPlantServer(GARDEN_PLANT_SERVICE_PORT, _cosmosClient));
+    services.add(new OtherEventServer(OTHER_EVENT_SERVICE_PORT, _cosmosClient));
     services.add(new PlantServer(PLANT_SERVICE_PORT, _cosmosClient));
+    services.add(new WateringEventServer(WATERING_EVENT_SERVICE_PORT, _cosmosClient));
 
     if (!COSMOS_TESTING) {
+      // GraphQL module providers
+      List<GraphQLModuleProvider> moduleProviders = new ArrayList<>();
+
+      moduleProviders.add(new AccountModuleProvider("localhost", ACCOUNT_SERVICE_PORT));
+      moduleProviders.add(new FertilizationEventModuleProvider("localhost", FERTILIZATION_EVENT_SERVICE_PORT));
+      moduleProviders.add(new GardenModuleProvider("localhost", GARDEN_SERVICE_PORT));
+      moduleProviders.add(new GardenerModuleProvider("localhost", GARDENER_SERVICE_PORT));
+      moduleProviders.add(new GardenPlantModuleProvider("localhost", GARDEN_PLANT_SERVICE_PORT));
+      moduleProviders.add(new OtherEventModuleProvider("localhost", OTHER_EVENT_SERVICE_PORT));
+      moduleProviders.add(new PlantModuleProvider("localhost", PLANT_SERVICE_PORT));
+      moduleProviders.add(new WateringEventModuleProvider("localhost", WATERING_EVENT_SERVICE_PORT));
+
       // graphql server
-      GraphQLModuleProvider fullGraphProvider =
-          new FullGraphProvider(Collections.singleton(new PlantModuleProvider("localhost", PLANT_SERVICE_PORT)));
+      GraphQLModuleProvider fullGraphProvider = new FullGraphProvider(moduleProviders);
       services.add(new GraphQLServer(GRAPHQL_SERVER_PORT, fullGraphProvider));
     }
 
@@ -125,7 +163,7 @@ public class PlantTrackerDemo implements AutoCloseable {
   }
 
   public static void main(String[] args) throws Exception {
-    int numThreads = 10;
+    int numThreads = 1;
     ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
     try {
       try (PlantTrackerDemo ptrackerDemo = new PlantTrackerDemo(getInitParams(args))) {

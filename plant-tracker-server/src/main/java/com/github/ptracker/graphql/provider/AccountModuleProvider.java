@@ -1,15 +1,15 @@
 package com.github.ptracker.graphql.provider;
 
-import com.github.ptracker.entity.Plant;
+import com.github.ptracker.entity.Account;
 import com.github.ptracker.graphql.api.GraphQLModuleProvider;
-import com.github.ptracker.service.PlantCreateRequest;
-import com.github.ptracker.service.PlantDeleteRequest;
-import com.github.ptracker.service.PlantDeleteResponse;
-import com.github.ptracker.service.PlantGetRequest;
-import com.github.ptracker.service.PlantGrpc;
-import com.github.ptracker.service.PlantGrpc.PlantBlockingStub;
-import com.github.ptracker.service.PlantGrpc.PlantFutureStub;
-import com.github.ptracker.service.PlantUpdateRequest;
+import com.github.ptracker.service.AccountCreateRequest;
+import com.github.ptracker.service.AccountDeleteRequest;
+import com.github.ptracker.service.AccountDeleteResponse;
+import com.github.ptracker.service.AccountGetRequest;
+import com.github.ptracker.service.AccountGrpc;
+import com.github.ptracker.service.AccountGrpc.AccountBlockingStub;
+import com.github.ptracker.service.AccountGrpc.AccountFutureStub;
+import com.github.ptracker.service.AccountUpdateRequest;
 import com.google.api.graphql.rejoiner.Mutation;
 import com.google.api.graphql.rejoiner.Query;
 import com.google.api.graphql.rejoiner.SchemaModule;
@@ -31,12 +31,12 @@ import org.dataloader.DataLoaderRegistry;
 import static com.google.common.base.Preconditions.*;
 
 
-public class PlantModuleProvider implements GraphQLModuleProvider {
-  private static final String BATCH_GET_DATA_LOADER_NAME = "plants";
+public class AccountModuleProvider implements GraphQLModuleProvider {
+  public static final String BATCH_GET_DATA_LOADER_NAME = "accounts";
   private final ClientModule _clientModule;
   private final Module _schemaModule = new SchemaModuleImpl();
 
-  public PlantModuleProvider(String serverHost, int serverPort) {
+  public AccountModuleProvider(String serverHost, int serverPort) {
     _clientModule = new ClientModule(serverHost, serverPort);
   }
 
@@ -59,7 +59,7 @@ public class PlantModuleProvider implements GraphQLModuleProvider {
     private final String _host;
     private final int _port;
 
-    private PlantFutureStub _futureStub;
+    private AccountFutureStub _futureStub;
 
     public ClientModule(String host, int port) {
       _host = checkNotNull(host, "Host cannot be null");
@@ -70,49 +70,48 @@ public class PlantModuleProvider implements GraphQLModuleProvider {
     @Override
     protected void configure() {
       ManagedChannel channel = ManagedChannelBuilder.forAddress(_host, _port).usePlaintext().build();
-      bind(PlantBlockingStub.class).toInstance(PlantGrpc.newBlockingStub(channel));
-      _futureStub = PlantGrpc.newFutureStub(channel);
-      bind(PlantFutureStub.class).toInstance(_futureStub);
+      bind(AccountBlockingStub.class).toInstance(AccountGrpc.newBlockingStub(channel));
+      _futureStub = AccountGrpc.newFutureStub(channel);
+      bind(AccountFutureStub.class).toInstance(_futureStub);
     }
 
     void registerDataLoaders(DataLoaderRegistry registry) {
-      BatchLoader<String, Plant> batchLoad = ids -> {
-        List<ListenableFuture<Plant>> futures = ids.stream()
-            .map(id -> Futures.transform(_futureStub.get(PlantGetRequest.newBuilder().setId(ids.get(0)).build()),
-                response -> response != null ? response.getPlant() : null,
-                MoreExecutors.directExecutor()))
+      BatchLoader<String, Account> batchLoader = ids -> {
+        List<ListenableFuture<Account>> futures = ids.stream()
+            .map(id -> Futures.transform(_futureStub.get(AccountGetRequest.newBuilder().setId(ids.get(0)).build()),
+                response -> response != null ? response.getAccount() : null, MoreExecutors.directExecutor()))
             .collect(Collectors.toList());
-        ListenableFuture<List<Plant>> listenableFuture = Futures.allAsList(futures);
+        ListenableFuture<List<Account>> listenableFuture = Futures.allAsList(futures);
         return FutureConverter.toCompletableFuture(listenableFuture);
       };
-      registry.register(BATCH_GET_DATA_LOADER_NAME, new DataLoader<>(batchLoad));
+      registry.register(BATCH_GET_DATA_LOADER_NAME, new DataLoader<>(batchLoader));
     }
   }
 
   private static class SchemaModuleImpl extends SchemaModule {
 
-    @Query("getPlant")
-    ListenableFuture<Plant> getPlant(PlantGetRequest request, DataFetchingEnvironment dataFetchingEnvironment) {
+    @Query("getAccount")
+    ListenableFuture<Account> getAccount(AccountGetRequest request, DataFetchingEnvironment dataFetchingEnvironment) {
       return FutureConverter.toListenableFuture(
-          dataFetchingEnvironment.<DataLoaderRegistry>getContext().<String, Plant>getDataLoader(
+          dataFetchingEnvironment.<DataLoaderRegistry>getContext().<String, Account>getDataLoader(
               BATCH_GET_DATA_LOADER_NAME).load(request.getId()));
     }
 
     // TODO: return needs to be "empty" or "success/failure"
-    @Mutation("createPlant")
-    ListenableFuture<Plant> createPlant(PlantCreateRequest request, PlantFutureStub client) {
-      return Futures.transform(client.create(request), ignored -> request.getPlant(), MoreExecutors.directExecutor());
+    @Mutation("createAccount")
+    ListenableFuture<Account> createAccount(AccountCreateRequest request, AccountFutureStub client) {
+      return Futures.transform(client.create(request), ignored -> request.getAccount(), MoreExecutors.directExecutor());
     }
 
     // TODO: return needs to be "empty" or "success/failure"
-    @Mutation("updatePlant")
-    ListenableFuture<Plant> updatePlant(PlantUpdateRequest request, PlantFutureStub client) {
-      return Futures.transform(client.update(request), ignored -> request.getPlant(), MoreExecutors.directExecutor());
+    @Mutation("updateAccount")
+    ListenableFuture<Account> updateAccount(AccountUpdateRequest request, AccountFutureStub client) {
+      return Futures.transform(client.update(request), ignored -> request.getAccount(), MoreExecutors.directExecutor());
     }
 
     // TODO: return needs to be "empty" or "success/failure"
-    @Mutation("deletePlant")
-    ListenableFuture<PlantDeleteResponse> deletePlant(PlantDeleteRequest request, PlantFutureStub client) {
+    @Mutation("deleteAccount")
+    ListenableFuture<AccountDeleteResponse> deleteAccount(AccountDeleteRequest request, AccountFutureStub client) {
       return client.delete(request);
     }
   }

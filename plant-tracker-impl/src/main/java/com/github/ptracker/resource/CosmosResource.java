@@ -34,23 +34,24 @@ public class CosmosResource<KEY_TYPE, VALUE_TYPE> implements Resource<KEY_TYPE, 
   private static final int DELETE_NOT_FOUND_STATUS_CODE = 404;
 
   private final CosmosContainer _container;
-  private final CosmosDBQuery<KEY_TYPE> _cosmosDBQuery;
   private final DataInterchange<ObjectNode, VALUE_TYPE> _dataInterchange;
   private final Function<KEY_TYPE, VALUE_TYPE> _valueWithIdOnlyCreator;
   private final Consumer<VALUE_TYPE> _valueVerifier;
+  private final CosmosDBQuery _cosmosDBQuery;
 
   private final CosmosDBMetadataHandler _metadataHandler = new CosmosDBMetadataHandler();
   private final ResourceResponse<Optional<VALUE_TYPE>> _noMatch =
       new ResourceResponseImpl.Builder<Optional<VALUE_TYPE>>().payload(Optional.empty()).build();
 
-  public CosmosResource(CosmosContainer container, CosmosDBQuery<KEY_TYPE> cosmosDBQuery,
+
+  public CosmosResource(CosmosContainer container,
       DataInterchange<ObjectNode, VALUE_TYPE> dataInterchange, Function<KEY_TYPE, VALUE_TYPE> valueWithIdOnlyCreator,
       Consumer<VALUE_TYPE> valueVerifier) {
     _container = checkNotNull(container, "CosmosContainer cannot be null");
-    _cosmosDBQuery = checkNotNull(cosmosDBQuery, "DataInterchange cannot be null");
     _dataInterchange = checkNotNull(dataInterchange, "DataInterchange cannot be null");
     _valueWithIdOnlyCreator = checkNotNull(valueWithIdOnlyCreator, "valueWithIdOnlyCreator cannot be null");
     _valueVerifier = checkNotNull(valueVerifier, "valueVerifier cannot be null");
+    _cosmosDBQuery = new CosmosDBQuery(container);
   }
 
   // TODO: Report a bug where if partition key is set, it is used across requests.
@@ -61,8 +62,9 @@ public class CosmosResource<KEY_TYPE, VALUE_TYPE> implements Resource<KEY_TYPE, 
   public ResourceResponse<Optional<VALUE_TYPE>> get(KEY_TYPE key, GetRequestOptions options) {
     checkArgument(key != null, "key cannot be null");
     LOGGER.debug("Getting {}", key);
+    ObjectNode node = _dataInterchange.convertBackward(_valueWithIdOnlyCreator.apply(key));
     List<ResourceResponseImpl<Optional<VALUE_TYPE>>> matchingResults =
-        _cosmosDBQuery.getResults(DEFAULT_QUERY_REQUEST_OPTIONS, key)
+        _cosmosDBQuery.getResults(node, DEFAULT_QUERY_REQUEST_OPTIONS)
             .stream()
             .map(item -> new ResourceResponseImpl.Builder<Optional<VALUE_TYPE>>().payload(
                 Optional.of(_dataInterchange.convertForward(item)))
@@ -78,6 +80,7 @@ public class CosmosResource<KEY_TYPE, VALUE_TYPE> implements Resource<KEY_TYPE, 
     _valueVerifier.accept(payload);
     LOGGER.debug("Creating {}", payload);
     ObjectNode item = _dataInterchange.convertBackward(payload);
+
 
     CosmosItemResponse<ObjectNode> createResponse = _container.createItem(item, DEFAULT_ITEM_REQUEST_OPTIONS);
     ResponseStatus responseStatus = createResponse.getStatusCode() == CREATE_SUCCESS_STATUS_CODE ? ResponseStatus.OK

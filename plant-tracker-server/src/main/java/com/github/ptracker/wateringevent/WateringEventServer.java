@@ -19,7 +19,6 @@ public class WateringEventServer extends GrpcServer {
 
   private static final String COSMOS_DB_NAME = "PlantsTracker";
   private static final String COSMOS_CONTAINER_NAME = "wateringEvents";
-  private static final String COSMOS_ID_FIELD_NAME = "id";
 
   public WateringEventServer(int port, CosmosClient cosmosClient) {
     super(SERVICE_DESCRIPTION,
@@ -38,7 +37,7 @@ public class WateringEventServer extends GrpcServer {
         new ProtoBufJsonInterchange<>(WateringEvent::newBuilder);
     Function<String, WateringEvent> valueWithIdOnlyCreator = key -> WateringEvent.newBuilder().setId(key).build();
     GrpcCosmosResourceSupplier<String, WateringEvent> supplier =
-        new GrpcCosmosResourceSupplier<>(cosmosClient, COSMOS_DB_NAME, COSMOS_CONTAINER_NAME, COSMOS_ID_FIELD_NAME,
+        new GrpcCosmosResourceSupplier<>(cosmosClient, COSMOS_DB_NAME, COSMOS_CONTAINER_NAME,
             dataInterchange, valueWithIdOnlyCreator, WateringEventServer::verifyWateringEvent);
     return supplier.get();
   }

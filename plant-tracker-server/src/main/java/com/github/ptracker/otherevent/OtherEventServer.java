@@ -19,7 +19,6 @@ public class OtherEventServer extends GrpcServer {
 
   private static final String COSMOS_DB_NAME = "PlantsTracker";
   private static final String COSMOS_CONTAINER_NAME = "otherEvents";
-  private static final String COSMOS_ID_FIELD_NAME = "id";
 
   public OtherEventServer(int port, CosmosClient cosmosClient) {
     super(SERVICE_DESCRIPTION,
@@ -38,7 +37,7 @@ public class OtherEventServer extends GrpcServer {
         new ProtoBufJsonInterchange<>(OtherEvent::newBuilder);
     Function<String, OtherEvent> valueWithIdOnlyCreator = key -> OtherEvent.newBuilder().setId(key).build();
     GrpcCosmosResourceSupplier<String, OtherEvent> supplier =
-        new GrpcCosmosResourceSupplier<>(cosmosClient, COSMOS_DB_NAME, COSMOS_CONTAINER_NAME, COSMOS_ID_FIELD_NAME,
+        new GrpcCosmosResourceSupplier<>(cosmosClient, COSMOS_DB_NAME, COSMOS_CONTAINER_NAME,
             dataInterchange, valueWithIdOnlyCreator, OtherEventServer::verifyOtherEvent);
     return supplier.get();
   }

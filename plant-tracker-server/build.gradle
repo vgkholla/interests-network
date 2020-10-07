@@ -6,7 +6,7 @@ plugins {
 apply from: file("../gradle/protobuf.gradle")
 
 application {
-  mainClassName = 'com.github.ptracker.server.PlantTrackerDemo'
+  mainClassName = 'com.github.ptracker.server.PlantTrackerServer'
 }
 
 dependencies {

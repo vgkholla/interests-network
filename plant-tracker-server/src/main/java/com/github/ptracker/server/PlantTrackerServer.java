@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -58,8 +59,8 @@ import org.slf4j.LoggerFactory;
 import static com.google.common.base.Preconditions.*;
 
 
-public class PlantTrackerDemo implements AutoCloseable {
-  private static final Logger LOGGER = LoggerFactory.getLogger(PlantTrackerDemo.class);
+public class PlantTrackerServer implements StartStopService {
+  private static final Logger LOGGER = LoggerFactory.getLogger(PlantTrackerServer.class);
 
   // Options
   private static final String OPT_COSMOS_DB_ACCOUNT_ENDPOINT = "cosmosDBAccountEndpoint";
@@ -81,53 +82,95 @@ public class PlantTrackerDemo implements AutoCloseable {
   // cosmos testing
   private static final boolean COSMOS_TESTING = false;
 
-  private final CosmosClient _cosmosClient;
-  private final Resource<String, Plant> _plantResource;
-  private final List<StartStopService> _services;
+  private final CosmosDBConfiguration _cosmosDBConfiguration;
+  private final GraphQLServerConfiguration _graphQLServerConfiguration;
+  private final List<StartStopService> _services = new ArrayList<>();
+  private CosmosClient _cosmosClient = null;
 
-  public Resource<String, Plant> getPlantResource() {
-    return _plantResource;
+  @Override
+  public void start() throws IOException {
+    LOGGER.info("Starting all services for PlantTracker");
+    createCosmosClient();
+    createServices();
+    for (StartStopService service : _services) {
+      service.start();
+    }
+    LOGGER.info("All services started");
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      if (!PlantTrackerServer.this.isShutdown()) {
+        // Use stderr here since the logger may have been reset by its JVM shutdown hook.
+        System.err.println("Shutting down all services since JVM is shutting down");
+        try {
+          PlantTrackerServer.this.stop();
+        } catch (Exception e) {
+          e.printStackTrace(System.err);
+        }
+        System.err.println("All services shut down");
+      }
+    }));
   }
 
-  public void awaitServicesTermination() throws InterruptedException {
-    for (StartStopService service : _services) {
-      service.awaitTermination();
+  @Override
+  public void stop() {
+    LOGGER.info("Stopping all services");
+    _services.forEach(StartStopService::stop);
+    if (_cosmosClient != null) {
+      _cosmosClient.close();
+      _cosmosClient = null;
+    }
+    LOGGER.info("Stopped all services");
+  }
+
+  @Override
+  public void shutdownNow() {
+    _services.forEach(StartStopService::shutdownNow);
+    if (_cosmosClient != null) {
+      _cosmosClient.close();
+      _cosmosClient = null;
     }
   }
 
   @Override
-  public void close() {
-    _services.forEach(StartStopService::stop);
-    _cosmosClient.close();
+  public boolean isShutdown() {
+    return _services.get(_services.size() - 1).isShutdown();
   }
 
-  private CosmosClient createCosmosClient(CosmosDBConfiguration configuration) {
-    checkNotNull(configuration, "CosmosDBConfiguration cannot be null");
-    checkArgument(configuration.getAccountEndpoint() != null && !configuration.getAccountEndpoint().isEmpty(),
-        "Need a CosmosDB account endpoint");
-    checkArgument(configuration.getAccountKey() != null && !configuration.getAccountKey().isEmpty(),
-        "Need a CosmosDB account key");
-    checkArgument(configuration.getPreferredRegionsList() != null && !configuration.getPreferredRegionsList().isEmpty(),
-        "Need CosmosDB preferred regions");
-    return new CosmosClientBuilder().endpoint(configuration.getAccountEndpoint())
-        .key(configuration.getAccountKey())
-        .preferredRegions(configuration.getPreferredRegionsList())
+  @Override
+  public boolean isTerminated() {
+    return _services.get(_services.size() - 1).isTerminated();
+  }
+
+  @Override
+  public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+    return _services.get(_services.size() - 1).awaitTermination(timeout, unit);
+  }
+
+  @Override
+  public void awaitTermination() throws InterruptedException {
+    _services.get(_services.size() - 1).awaitTermination();
+  }
+
+  private void createCosmosClient() {
+    if (_cosmosClient != null) {
+      return;
+    }
+    _cosmosClient = new CosmosClientBuilder().endpoint(_cosmosDBConfiguration.getAccountEndpoint())
+        .key(_cosmosDBConfiguration.getAccountKey())
+        .preferredRegions(_cosmosDBConfiguration.getPreferredRegionsList())
         .consistencyLevel(ConsistencyLevel.SESSION)
         .buildClient();
   }
 
-  private List<StartStopService> createServices(GraphQLServerConfiguration graphQLServerConfiguration) {
-    List<StartStopService> services = new ArrayList<>();
-
+  private void createServices() {
     // servers
-    services.add(new AccountServer(ACCOUNT_SERVICE_PORT, _cosmosClient));
-    services.add(new FertilizationEventServer(FERTILIZATION_EVENT_SERVICE_PORT, _cosmosClient));
-    services.add(new GardenServer(GARDEN_SERVICE_PORT, _cosmosClient));
-    services.add(new GardenerServer(GARDENER_SERVICE_PORT, _cosmosClient));
-    services.add(new GardenPlantServer(GARDEN_PLANT_SERVICE_PORT, _cosmosClient));
-    services.add(new OtherEventServer(OTHER_EVENT_SERVICE_PORT, _cosmosClient));
-    services.add(new PlantServer(PLANT_SERVICE_PORT, _cosmosClient));
-    services.add(new WateringEventServer(WATERING_EVENT_SERVICE_PORT, _cosmosClient));
+    _services.add(new AccountServer(ACCOUNT_SERVICE_PORT, _cosmosClient));
+    _services.add(new FertilizationEventServer(FERTILIZATION_EVENT_SERVICE_PORT, _cosmosClient));
+    _services.add(new GardenServer(GARDEN_SERVICE_PORT, _cosmosClient));
+    _services.add(new GardenerServer(GARDENER_SERVICE_PORT, _cosmosClient));
+    _services.add(new GardenPlantServer(GARDEN_PLANT_SERVICE_PORT, _cosmosClient));
+    _services.add(new OtherEventServer(OTHER_EVENT_SERVICE_PORT, _cosmosClient));
+    _services.add(new PlantServer(PLANT_SERVICE_PORT, _cosmosClient));
+    _services.add(new WateringEventServer(WATERING_EVENT_SERVICE_PORT, _cosmosClient));
 
     if (!COSMOS_TESTING) {
       // GraphQL module providers
@@ -148,43 +191,68 @@ public class PlantTrackerDemo implements AutoCloseable {
 
       // graphql server
       GraphQLModuleProvider fullGraphProvider = new FullGraphProvider(moduleProviders);
-      services.add(new GraphQLServer(GRAPHQL_SERVER_PORT, fullGraphProvider,
-          graphQLServerConfiguration.getStaticResourcesPath()));
+      _services.add(new GraphQLServer(GRAPHQL_SERVER_PORT, fullGraphProvider,
+          _graphQLServerConfiguration.getStaticResourcesPath()));
     }
-
-    return services;
   }
 
-  private PlantTrackerDemo(PlantTrackerServerInitializationParams params) throws IOException {
+  private PlantTrackerServer(PlantTrackerServerInitializationParams params) {
     checkNotNull(params, "Initialization params cannot be null");
-    _cosmosClient = createCosmosClient(params.getCosmosDBConfiguration());
-    _services = createServices(params.getGraphQLServerConfiguration());
+    _cosmosDBConfiguration = validateConfiguration(params.getCosmosDBConfiguration());
+    _graphQLServerConfiguration = validateConfiguration(params.getGraphQLServerConfiguration());
+  }
 
-    for (StartStopService service : _services) {
-      service.start();
-    }
+  private static CosmosDBConfiguration validateConfiguration(CosmosDBConfiguration cosmosDBConfiguration) {
+    checkNotNull(cosmosDBConfiguration, "CosmosDBConfiguration cannot be null");
+    String accountEndpoint =
+        checkNotNull(cosmosDBConfiguration.getAccountEndpoint(), "Cosmos account endpoint cannot be null");
+    checkArgument(!accountEndpoint.isEmpty(), "Cosmos account endpoint cannot be empty");
+    String accountKey = checkNotNull(cosmosDBConfiguration.getAccountKey(), "Cosmos account key cannot be null");
+    checkArgument(!accountKey.isEmpty(), "Cosmos account endpoint cannot be empty");
+    List<String> preferredRegions =
+        checkNotNull(cosmosDBConfiguration.getPreferredRegionsList(), "Cosmos preferred regions cannot be null");
+    checkArgument(!preferredRegions.isEmpty(), "Cosmos preferred regions cannot be empty");
+    return cosmosDBConfiguration;
+  }
 
-    _plantResource = new GrpcResource<>(new PlantClient("localhost", PLANT_SERVICE_PORT));
+  private static GraphQLServerConfiguration validateConfiguration(
+      GraphQLServerConfiguration graphQLServerConfiguration) {
+    checkNotNull(graphQLServerConfiguration, "GraphQLServerConfiguration cannot be null");
+    String staticResourcesPath =
+        checkNotNull(graphQLServerConfiguration.getStaticResourcesPath(), "Static resources path cannot be null");
+    checkArgument(!staticResourcesPath.isEmpty(), "Static resources path cannot be empty");
+    return graphQLServerConfiguration;
   }
 
   public static void main(String[] args) throws Exception {
+    PlantTrackerServer ptrackerServer = new PlantTrackerServer(getInitParams(args));
+    try {
+      ptrackerServer.start();
+      if (COSMOS_TESTING) {
+        cosmosDbTesting();
+      } else {
+        ptrackerServer.awaitTermination();
+      }
+    } finally {
+      ptrackerServer.stop();
+      if (!ptrackerServer.awaitTermination(10, TimeUnit.SECONDS)) {
+        LOGGER.warn("Server did not shut down after 10 seconds. Forcing stop");
+        ptrackerServer.shutdownNow();
+      }
+    }
+  }
+
+  private static void cosmosDbTesting() throws ExecutionException, InterruptedException {
     int numThreads = 1;
     ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
     try {
-      try (PlantTrackerDemo ptrackerDemo = new PlantTrackerDemo(getInitParams(args))) {
-        if (COSMOS_TESTING) {
-          List<Callable<Void>> callables =
-              IntStream.range(0, numThreads).boxed().map(ignored -> (Callable<Void>) () -> {
-                plantsCRUDDemo(ptrackerDemo.getPlantResource());
-                return null;
-              }).collect(Collectors.toList());
-          List<Future<Void>> futures = executorService.invokeAll(callables);
-          for (Future<Void> future : futures) {
-            future.get();
-          }
-        } else {
-          ptrackerDemo.awaitServicesTermination();
-        }
+      List<Callable<Void>> callables = IntStream.range(0, numThreads).boxed().map(ignored -> (Callable<Void>) () -> {
+        plantsCRUDDemo();
+        return null;
+      }).collect(Collectors.toList());
+      List<Future<Void>> futures = executorService.invokeAll(callables);
+      for (Future<Void> future : futures) {
+        future.get();
       }
     } finally {
       executorService.shutdown();
@@ -195,10 +263,11 @@ public class PlantTrackerDemo implements AutoCloseable {
   }
 
   private static PlantTrackerServerInitializationParams getInitParams(String[] args) throws ParseException {
-    CommandLineParser parser = new DefaultParser();
     Options options = new Options();
     getCosmosDBOptions().getOptions().forEach(options::addOption);
     getGQLServerOptions().getOptions().forEach(options::addOption);
+
+    CommandLineParser parser = new DefaultParser();
     CommandLine commandLine = parser.parse(options, args);
 
     PlantTrackerServerInitializationParams.Builder builder = PlantTrackerServerInitializationParams.newBuilder();
@@ -263,7 +332,8 @@ public class PlantTrackerDemo implements AutoCloseable {
     return builder.build();
   }
 
-  private static void plantsCRUDDemo(Resource<String, Plant> plantResource) {
+  private static void plantsCRUDDemo() {
+    Resource<String, Plant> plantResource = new GrpcResource<>(new PlantClient("localhost", PLANT_SERVICE_PORT));
     long id = UUID.randomUUID().getLeastSignificantBits();
     String plantId = "ptracker:plant:" + id;
 

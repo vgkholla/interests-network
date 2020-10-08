@@ -57,4 +57,9 @@ ext {
 
   junitVersion = '4.13'
   junitArts = [junit: "junit:junit:${junitVersion}"]
+
+  apolloGraphQLClientVersion = '2.4.1'
+  apolloGraphQLClientArts = [
+      runtime: "com.apollographql.apollo:apollo-runtime:${apolloGraphQLClientVersion}"
+  ]
 }

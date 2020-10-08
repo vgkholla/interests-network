@@ -71,9 +71,13 @@ public class CosmosResource<KEY_TYPE, VALUE_TYPE> implements Resource<KEY_TYPE, 
     ObjectNode node = _dataInterchange.convertBackward(template);
     return _cosmosDBQuery.getResults(node, DEFAULT_QUERY_REQUEST_OPTIONS)
         .stream()
-        .map(item -> new ResourceResponseImpl.Builder<VALUE_TYPE>().payload(_dataInterchange.convertForward(item))
-            .metadata(_metadataHandler.getStorageMetadata(item))
-            .build())
+        .map(item -> {
+          VALUE_TYPE value = _dataInterchange.convertForward(item);
+          _valueVerifier.accept(value);
+          return new ResourceResponseImpl.Builder<VALUE_TYPE>().payload(value)
+              .metadata(_metadataHandler.getStorageMetadata(item))
+              .build();
+        })
         .collect(Collectors.toList());
   }
 

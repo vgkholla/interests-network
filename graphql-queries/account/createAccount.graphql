@@ -1,7 +1,0 @@
-mutation createAccount($name: String!) {
-    createAccount(input: { account: {
-        name: $name
-    }}) {
-        id
-    }
-}

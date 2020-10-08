@@ -1,8 +1,0 @@
-mutation createGardener($firstName: String!, $lastName: String!) {
-    createGardener(input: { gardener: {
-        firstName: $firstName,
-        lastName: $lastName
-    }}) {
-        id
-    }
-}

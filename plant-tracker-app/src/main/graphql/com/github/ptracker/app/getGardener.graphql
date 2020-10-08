@@ -1,0 +1,7 @@
+query getGardener($id: String!) {
+    getGardener(input: { id: $id }) {
+        id
+        firstname
+        lastname
+    }
+}

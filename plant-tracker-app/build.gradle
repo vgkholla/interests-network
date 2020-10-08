@@ -1,0 +1,28 @@
+plugins {
+    // id 'application'
+    id 'com.google.protobuf' version "${protbufGradlePluginVersion}"
+    id 'com.apollographql.apollo' version "${apolloGraphQLClientVersion}"
+}
+
+apply from: file("../gradle/protobuf.gradle")
+
+//application {
+//    mainClassName = 'com.github.ptracker.server.PlantTrackerApp'
+//}
+
+dependencies {
+    implementation apolloGraphQLClientArts.runtime
+    implementation commonsCliArts.cli
+    implementation project(':plant-tracker-api')
+    implementation project(':plant-tracker-models')
+}
+
+apollo {
+    graphqlSourceDirectorySet.srcDirs += "$projectDir/src/main/graphql/com/github/ptracker/app"
+    graphqlSourceDirectorySet.exclude("**/*.json")
+    graphqlSourceDirectorySet.exclude("**/*.graphqlconfig")
+    rootPackageName.set("com.gitgub.ptracker.app")
+    customTypeMapping = [
+        "Long" : "java.lang.Long"
+    ]
+}

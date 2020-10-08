@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package com.github.ptracker.app;
+
+option java_package = "com.github.ptracker.app";
+option java_multiple_files = true;
+option java_outer_classname = "PlantTrackerAppInitializationParamsProto";
+
+message PlantTrackerAppInitializationParams {
+  string graphQLServerUrl = 1;
+}

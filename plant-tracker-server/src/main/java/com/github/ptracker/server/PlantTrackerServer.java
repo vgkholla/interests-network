@@ -82,6 +82,9 @@ public class PlantTrackerServer implements StartStopService {
   // cosmos testing
   private static final boolean COSMOS_TESTING = false;
 
+  // other
+  private static final String DEFAULT_GRAPHQL_SERVER_STATIC_RESOURCES_PATH = "src/main/resources";
+
   private final CosmosDBConfiguration _cosmosDBConfiguration;
   private final GraphQLServerConfiguration _graphQLServerConfiguration;
   private final List<StartStopService> _services = new ArrayList<>();
@@ -327,7 +330,8 @@ public class PlantTrackerServer implements StartStopService {
 
   private static GraphQLServerConfiguration getGraphQLServerConfiguration(CommandLine commandLine) {
     GraphQLServerConfiguration.Builder builder = GraphQLServerConfiguration.newBuilder();
-    String staticResourcesPath = commandLine.getOptionValue(OPT_GQL_SERVER_STATIC_RESOURCES_PATH, "src/main/resources");
+    String staticResourcesPath =
+        commandLine.getOptionValue(OPT_GQL_SERVER_STATIC_RESOURCES_PATH, DEFAULT_GRAPHQL_SERVER_STATIC_RESOURCES_PATH);
     builder.setStaticResourcesPath(staticResourcesPath);
     return builder.build();
   }

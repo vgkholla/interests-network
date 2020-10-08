@@ -15,3 +15,5 @@ include 'plant-tracker-storage'
 include 'plant-tracker-models'
 include 'plant-tracker-api'
 include 'plant-tracker-impl'
+include 'plant-tracker-app'
+

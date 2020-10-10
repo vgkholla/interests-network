@@ -10,7 +10,7 @@ message Gardener {
 
   string id = 1;
 
-  string firstName = 2;
+  string first_name = 2;
 
-  string lastName = 3;
+  string last_name = 3;
 }

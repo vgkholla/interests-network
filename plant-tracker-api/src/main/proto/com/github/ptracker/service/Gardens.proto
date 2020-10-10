@@ -46,7 +46,7 @@ message GardenCreateResponse {
 
 message GardenUpdateRequest {
   com.github.ptracker.entity.Garden garden = 1;
-  bool shouldUpsert = 2;
+  bool should_upsert = 2;
 }
 
 message GardenUpdateResponse {

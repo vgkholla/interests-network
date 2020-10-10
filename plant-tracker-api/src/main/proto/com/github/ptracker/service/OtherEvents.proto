@@ -46,7 +46,7 @@ message OtherEventCreateResponse {
 
 message OtherEventUpdateRequest {
   com.github.ptracker.entity.OtherEvent otherEvent = 1;
-  bool shouldUpsert = 2;
+  bool should_upsert = 2;
 }
 
 message OtherEventUpdateResponse {

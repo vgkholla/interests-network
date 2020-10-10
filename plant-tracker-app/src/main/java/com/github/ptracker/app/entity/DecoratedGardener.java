@@ -1,31 +1,41 @@
-package com.github.ptracker.app;
+package com.github.ptracker.app.entity;
 
 import com.apollographql.apollo.ApolloClient;
 import com.gitgub.ptracker.app.GetGardenerQuery;
+import com.github.ptracker.app.util.ApolloClientCallback;
 import com.github.ptracker.entity.Gardener;
 import java.util.concurrent.TimeUnit;
 
+import static com.github.ptracker.app.entity.VerifierUtils.*;
 import static com.google.common.base.Preconditions.*;
 
 
 public class DecoratedGardener {
   private final ApolloClient _graphQLClient;
-  private final String _gardenerId;
+  private final String _id;
 
   private Gardener _gardener;
 
-  public DecoratedGardener(ApolloClient graphQLClient, String gardenerId) {
+  public DecoratedGardener(ApolloClient graphQLClient, String id) {
     _graphQLClient = checkNotNull(graphQLClient, "graphQLClient cannot be null");
-    _gardenerId = checkNotNull(gardenerId, "Gardner ID cannot be null");
+    _id = verifyStringFieldNotNullOrEmpty(id, "Gardener ID cannot be empty");
+  }
+
+  public String getId() {
+    return _id;
+  }
+
+  public Gardener getGardener() {
+    populate();
+    return _gardener;
   }
 
   @Override
   public String toString() {
-    return "DecoratedGardener{" + "_graphQLClient=" + _graphQLClient + ", _gardenerId='" + _gardenerId + '\''
-        + ", _gardener=" + _gardener + '}';
+    return "DecoratedGardener{" + "_gardenerId='" + _id + '\'' + '}';
   }
 
-  public Gardener getGardener() {
+  private void populate() {
     if (_gardener == null) {
       synchronized (this) {
         if (_gardener == null) {
@@ -35,16 +45,15 @@ public class DecoratedGardener {
               return null;
             }
             return Gardener.newBuilder()
-                .setId(_gardenerId)
-                .setFirstName(getGardener.firstname())
-                .setLastName(getGardener.lastname())
+                .setId(_id)
+                .setFirstName(getGardener.firstName())
+                .setLastName(getGardener.lastName())
                 .build();
           });
-          _graphQLClient.query(new GetGardenerQuery(_gardenerId)).enqueue(callback);
+          _graphQLClient.query(new GetGardenerQuery(_id)).enqueue(callback);
           _gardener = callback.getNonNullOrThrow(10, TimeUnit.SECONDS);
         }
       }
     }
-    return _gardener;
   }
 }

@@ -46,7 +46,7 @@ message FertilizationEventCreateResponse {
 
 message FertilizationEventUpdateRequest {
   com.github.ptracker.entity.FertilizationEvent fertilizationEvent = 1;
-  bool shouldUpsert = 2;
+  bool should_upsert = 2;
 }
 
 message FertilizationEventUpdateResponse {

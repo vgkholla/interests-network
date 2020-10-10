@@ -1,7 +1,14 @@
 package com.github.ptracker.app;
 
 import com.apollographql.apollo.ApolloClient;
-import com.github.ptracker.entity.Account;
+import com.github.ptracker.app.entity.DecoratedAccount;
+import com.github.ptracker.app.entity.DecoratedFertilizationEvent;
+import com.github.ptracker.app.entity.DecoratedGarden;
+import com.github.ptracker.app.entity.DecoratedGardenPlant;
+import com.github.ptracker.app.entity.DecoratedGardener;
+import com.github.ptracker.app.entity.DecoratedOtherEvent;
+import com.github.ptracker.app.entity.DecoratedWateringEvent;
+import java.util.Scanner;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -14,16 +21,50 @@ public class PlantTrackerApp {
   private static final String OPT_GRAPHQL_SERVER_URL = "graphQLServerUrl";
   private static final String DEFAULT_GRAPHQL_SERVER_URL = "http://localhost:8080/graphql";
 
+  private static final String DEFAULT_GARDENER_ID = "ptracker:gardener:1";
+  private static final String DEFAULT_ACCOUNT_ID = "ptracker:account:1";
+
   public static void main(String[] args) throws Exception {
     PlantTrackerAppInitializationParams initParams = getInitParams(args);
-    ApolloClient graphQLClient = getGraphQLClient(initParams.getGraphQLServerUrl());
-    String gardenerId = "ptracker:gardener:2";
-    DecoratedGardener gardener = login(gardenerId, graphQLClient);
-    String accountId = "ptracker:account:1";
-    DecoratedAccount account = getAccount(accountId, gardener, graphQLClient);
-    System.out.println(account.getAccount());
-    System.out.println(gardener.getGardener());
-    System.out.println();
+    ApolloClient graphQLClient = getGraphQLClient(initParams.getGraphqlServerUrl());
+
+    Scanner scanner = new Scanner(System.in);
+    System.out.println("Welcome Gardener! Maintain a log of the events for your plants with this app (and more!)");
+    System.out.print("Username [" + DEFAULT_GARDENER_ID + "]: ");
+    String username = scanner.nextLine();
+    username = username == null || username.isEmpty() ? DEFAULT_GARDENER_ID : username;
+    DecoratedGardener decoratedGardener = login(username, graphQLClient);
+    System.out.print("Account [" + DEFAULT_ACCOUNT_ID + "]: ");
+    String account = scanner.nextLine();
+    account = account == null || account.isEmpty() ? DEFAULT_ACCOUNT_ID : account;
+    DecoratedAccount decoratedAccount = getAccount(account, decoratedGardener, graphQLClient);
+
+    System.out.println("Account: ");
+    System.out.println(decoratedAccount.getAccount());
+    System.out.println("Gardens: ");
+    for (DecoratedGarden garden : decoratedAccount.getGardens()) {
+      System.out.println(garden.getGarden());
+      System.out.println("Garden plants: ");
+      for (DecoratedGardenPlant gardenPlant : garden.getGardenPlants()) {
+        System.out.println(gardenPlant.getGardenPlant());
+        System.out.println(gardenPlant.getPlant().getPlant());
+        System.out.println("Watering events");
+        for (DecoratedWateringEvent event : gardenPlant.getWateringEvents()) {
+          System.out.println(event.getEvent());
+          System.out.println(event.getMetadata().getActor());
+        }
+        System.out.println("Fertilization events");
+        for (DecoratedFertilizationEvent event : gardenPlant.getFertilizationEvents()) {
+          System.out.println(event.getEvent());
+          System.out.println(event.getMetadata().getActor());
+        }
+        System.out.println("Other events");
+        for (DecoratedOtherEvent event : gardenPlant.getOtherEvents()) {
+          System.out.println(event.getEvent());
+          System.out.println(event.getMetadata().getActor());
+        }
+      }
+    }
   }
 
   private static ApolloClient getGraphQLClient(String graphQLServerUrl) {
@@ -57,7 +98,7 @@ public class PlantTrackerApp {
     CommandLine commandLine = parser.parse(options, args);
 
     PlantTrackerAppInitializationParams.Builder builder = PlantTrackerAppInitializationParams.newBuilder();
-    builder.setGraphQLServerUrl(commandLine.getOptionValue(OPT_GRAPHQL_SERVER_URL, DEFAULT_GRAPHQL_SERVER_URL));
+    builder.setGraphqlServerUrl(commandLine.getOptionValue(OPT_GRAPHQL_SERVER_URL, DEFAULT_GRAPHQL_SERVER_URL));
     return builder.build();
   }
 

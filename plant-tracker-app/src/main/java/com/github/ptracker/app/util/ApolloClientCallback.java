@@ -1,4 +1,4 @@
-package com.github.ptracker.app;
+package com.github.ptracker.app.util;
 
 import com.apollographql.apollo.ApolloCall;
 import com.apollographql.apollo.api.Response;

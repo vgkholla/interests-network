@@ -10,5 +10,5 @@ message StorageMetadata {
 
   string etag = 1;
 
-  int32 statusCode = 2;
+  int32 status_code = 2;
 }

@@ -1,13 +1,14 @@
 query getOtherEvent($id: String!) {
     getOtherEvent(input: { id: $id }) {
+        id
         description
         metadata {
             timestamp
             comment
             gardener {
                 id
-                firstname
-                lastname
+                firstName
+                lastName
             }
         }
     }

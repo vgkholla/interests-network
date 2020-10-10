@@ -12,9 +12,9 @@ message FertilizationEvent {
 
   string id = 1;
 
-  int32 quantityMg = 2;
+  int32 quantity_mg = 2;
 
   com.github.ptracker.common.EventMetadata metadata = 3;
 
-  string gardenPlantId = 4;
+  string garden_plant_id = 4;
 }

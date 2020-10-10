@@ -12,7 +12,7 @@ message GardenPlant {
 
   string name = 2;
 
-  string gardenId = 3;
+  string garden_id = 3;
 
-  string plantId = 4;
+  string plant_id = 4;
 }

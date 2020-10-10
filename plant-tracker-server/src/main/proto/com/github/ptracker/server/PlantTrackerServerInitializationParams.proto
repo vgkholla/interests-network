@@ -7,19 +7,19 @@ option java_multiple_files = true;
 option java_outer_classname = "PlantTrackerServerInitializationParamsProto";
 
 message PlantTrackerServerInitializationParams {
-  CosmosDBConfiguration cosmosDBConfiguration = 1;
+  CosmosDBConfiguration cosmos_db_configuration = 1;
 
-  GraphQLServerConfiguration graphQLServerConfiguration = 2;
+  GraphQLServerConfiguration graphql_server_configuration = 2;
 }
 
 message CosmosDBConfiguration {
-  string accountEndpoint = 1;
+  string account_endpoint = 1;
 
-  string accountKey = 2;
+  string account_key = 2;
 
-  repeated string preferredRegions = 3;
+  repeated string preferred_regions = 3;
 }
 
 message GraphQLServerConfiguration {
-  string staticResourcesPath = 1;
+  string static_resources_path = 1;
 }

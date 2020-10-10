@@ -1,5 +1,6 @@
 query getGardenPlant($id: String!) {
     getGardenPlant(input: { id: $id }) {
+        id
         name
         plant {
             id

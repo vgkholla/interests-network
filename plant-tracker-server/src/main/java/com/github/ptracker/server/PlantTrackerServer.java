@@ -201,8 +201,8 @@ public class PlantTrackerServer implements StartStopService {
 
   private PlantTrackerServer(PlantTrackerServerInitializationParams params) {
     checkNotNull(params, "Initialization params cannot be null");
-    _cosmosDBConfiguration = validateConfiguration(params.getCosmosDBConfiguration());
-    _graphQLServerConfiguration = validateConfiguration(params.getGraphQLServerConfiguration());
+    _cosmosDBConfiguration = validateConfiguration(params.getCosmosDbConfiguration());
+    _graphQLServerConfiguration = validateConfiguration(params.getGraphqlServerConfiguration());
   }
 
   private static CosmosDBConfiguration validateConfiguration(CosmosDBConfiguration cosmosDBConfiguration) {
@@ -274,8 +274,8 @@ public class PlantTrackerServer implements StartStopService {
     CommandLine commandLine = parser.parse(options, args);
 
     PlantTrackerServerInitializationParams.Builder builder = PlantTrackerServerInitializationParams.newBuilder();
-    builder.setCosmosDBConfiguration(getCosmosDBConfiguration(commandLine));
-    builder.setGraphQLServerConfiguration(getGraphQLServerConfiguration(commandLine));
+    builder.setCosmosDbConfiguration(getCosmosDBConfiguration(commandLine));
+    builder.setGraphqlServerConfiguration(getGraphQLServerConfiguration(commandLine));
     return builder.build();
   }
 

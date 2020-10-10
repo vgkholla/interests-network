@@ -18,12 +18,12 @@ query fullQuery($accountId: String!){
                     }
                 }
                 wateringEvents {
-                    quantityml
+                    quantityMl
                     metadata {
                         gardener {
-                            firstname
+                            firstName
                             wateringEvents {
-                                quantityml
+                                quantityMl
                             }
                         }
                     }
@@ -32,12 +32,12 @@ query fullQuery($accountId: String!){
                     }
                 }
                 fertilizationEvents {
-                    quantitymg
+                    quantityMg
                     metadata {
                         gardener {
-                            firstname
+                            firstName
                             fertilizationEvents {
-                                quantitymg
+                                quantityMg
                             }
                         }
                     }
@@ -49,7 +49,7 @@ query fullQuery($accountId: String!){
                     description
                     metadata {
                         gardener {
-                            firstname
+                            firstName
                             otherGardenPlantEvents {
                                 description
                             }

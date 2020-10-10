@@ -16,5 +16,5 @@ message OtherEvent {
 
   com.github.ptracker.common.EventMetadata metadata = 3;
 
-  string gardenPlantId = 4;
+  string garden_plant_id = 4;
 }

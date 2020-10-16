@@ -1,9 +1,9 @@
 mutation createFertilizationEvent($quantityMg: Int!, $gardenPlantId: String!, $gardenerId: String!, $timestamp: Long!, $comment: String) {
     createFertilizationEvent(input: { fertilizationEvent: {
-        quantityMg: $quantityMg,
-        gardenPlantId: $gardenPlantId,
+        quantity_mg: $quantityMg,
+        garden_plant_id: $gardenPlantId,
         metadata: {
-            gardenerId: $gardenerId,
+            gardener_id: $gardenerId,
             timestamp: $timestamp,
             comment: $comment
         }

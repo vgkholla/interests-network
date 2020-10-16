@@ -67,16 +67,16 @@ public class OtherEventModuleProvider implements GraphQLModuleProvider {
     _clientModule.registerDataLoaders(registry);
   }
 
-  public static CompletableFuture<List<OtherEvent>> getOtherEventByGardenPlantId(DataFetchingEnvironment environment,
+  public static CompletableFuture<List<OtherEvent>> getOtherEventsByGardenPlantId(DataFetchingEnvironment environment,
       String gardenPlantId) {
-    return OtherEventModuleProvider.ClientModule.getOtherEventByGardenPlantId(environment, gardenPlantId);
+    return OtherEventModuleProvider.ClientModule.getOtherEventsByGardenPlantId(environment, gardenPlantId);
   }
 
-  public static CompletableFuture<List<OtherEvent>> getOtherEventByGardenerId(DataFetchingEnvironment environment,
+  public static CompletableFuture<List<OtherEvent>> getOtherEventsByGardenerId(DataFetchingEnvironment environment,
       String gardenerId) {
     checkNotNull(environment, "DataFetchingEnvironment cannot be null");
     checkNotNull(gardenerId, "OtherEvent ID cannot be null");
-    return OtherEventModuleProvider.ClientModule.getOtherEventByGardenPlantId(environment, gardenerId);
+    return OtherEventModuleProvider.ClientModule.getOtherEventsByGardenerId(environment, gardenerId);
   }
 
   private static class ClientModule extends AbstractModule {
@@ -160,25 +160,25 @@ public class OtherEventModuleProvider implements GraphQLModuleProvider {
           GET_BY_ID_DATA_LOADER_NAME).load(id);
     }
 
-    static CompletableFuture<List<OtherEvent>> getOtherEventByGardenPlantId(DataFetchingEnvironment environment,
+    static CompletableFuture<List<OtherEvent>> getOtherEventsByGardenPlantId(DataFetchingEnvironment environment,
         String gardenPlantId) {
       checkNotNull(environment, "DataFetchingEnvironment cannot be null");
       checkNotNull(gardenPlantId, "OtherEvent ID cannot be null");
       return environment.<DataLoaderRegistry>getContext().<String, List<OtherEvent>>getDataLoader(
-          GET_BY_ID_DATA_LOADER_NAME).load(gardenPlantId);
+          GET_BY_GARDEN_PLANT_ID_DATA_LOADER_NAME).load(gardenPlantId);
     }
 
-    static CompletableFuture<List<OtherEvent>> getOtherEventByGardenerId(DataFetchingEnvironment environment,
+    static CompletableFuture<List<OtherEvent>> getOtherEventsByGardenerId(DataFetchingEnvironment environment,
         String gardenerId) {
       checkNotNull(environment, "DataFetchingEnvironment cannot be null");
       checkNotNull(gardenerId, "OtherEvent ID cannot be null");
       return environment.<DataLoaderRegistry>getContext().<String, List<OtherEvent>>getDataLoader(
-          GET_BY_ID_DATA_LOADER_NAME).load(gardenerId);
+          GET_BY_GARDENER_ID_DATA_LOADER_NAME).load(gardenerId);
     }
   }
 
   private static class SchemaModuleImpl extends SchemaModule {
-    private static final String ID_PREFIX = "ptracker:account:";
+    private static final String ID_PREFIX = "ptracker:otherevent:";
     private final IdGenerator<String> _idGenerator = new RandomStringIdGenerator(ID_PREFIX);
 
     @Query("getOtherEvent")

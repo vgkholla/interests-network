@@ -38,6 +38,7 @@ public class CosmosDBQuery {
     while (fields.hasNext()) {
       Map.Entry<String, JsonNode> field = fields.next();
       JsonNode value = field.getValue();
+      // TODO: support look up by sub paths (like metadata/gardenerId)
       if (value.isValueNode()) {
         queryBuilder.append(" ")
             .append(getFilterField(field.getKey()))

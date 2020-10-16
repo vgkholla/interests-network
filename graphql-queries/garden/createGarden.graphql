@@ -1,8 +1,0 @@
-mutation createGarden($name: String!, $accountId: String!) {
-    createGarden(input: { garden: {
-        name: $name,
-        accountId: $accountId
-    }}) {
-        id
-    }
-}

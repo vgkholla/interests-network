@@ -1,7 +1,7 @@
 package com.github.ptracker.app.entity;
 
 import com.apollographql.apollo.ApolloClient;
-import com.gitgub.ptracker.app.GetAccountQuery;
+import com.github.ptracker.app.GetAccountQuery;
 import com.github.ptracker.app.util.ApolloClientCallback;
 import com.github.ptracker.entity.Account;
 import com.github.ptracker.entity.Garden;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.github.ptracker.app.entity.VerifierUtils.*;
+import static com.github.ptracker.app.util.VerifierUtils.*;
 import static com.google.common.base.Preconditions.*;
 
 
@@ -25,7 +25,7 @@ public class DecoratedAccount {
 
   public DecoratedAccount(ApolloClient graphQLClient, String id, DecoratedGardener gardener) {
     _graphQLClient = checkNotNull(graphQLClient, "graphQLClient cannot be null");
-    _id = verifyStringFieldNotNullOrEmpty(id, "Account ID cannot be empty");
+    _id = verifyStringNotNullOrEmpty(id, "Account ID cannot be empty");
     _gardener = checkNotNull(gardener, "Gardener cannot be null");
   }
 

@@ -114,7 +114,7 @@ public class PlantModuleProvider implements GraphQLModuleProvider {
   }
 
   private static class SchemaModuleImpl extends SchemaModule {
-    private static final String ID_PREFIX = "ptracker:account:";
+    private static final String ID_PREFIX = "ptracker:plant:";
     private final IdGenerator<String> _idGenerator = new RandomStringIdGenerator(ID_PREFIX);
 
     @Query("getPlant")

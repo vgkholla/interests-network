@@ -1,9 +1,9 @@
 mutation createWateringEvent($quantityMl: Int!, $gardenPlantId: String!, $gardenerId: String!, $timestamp: Long!, $comment: String) {
     createWateringEvent(input: { wateringEvent: {
-        quantityMl: $quantityMl,
-        gardenPlantId: $gardenPlantId,
+        quantity_ml: $quantityMl,
+        garden_plant_id: $gardenPlantId,
         metadata: {
-            gardenerId: $gardenerId,
+            gardener_id: $gardenerId,
             timestamp: $timestamp,
             comment: $comment
         }

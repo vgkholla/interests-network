@@ -1,16 +1,24 @@
 package com.github.ptracker.app.entity;
 
 import com.apollographql.apollo.ApolloClient;
-import com.gitgub.ptracker.app.GetGardenPlantQuery;
+import com.apollographql.apollo.api.Input;
+import com.github.ptracker.app.CreateFertilizationEventMutation;
+import com.github.ptracker.app.CreateOtherEventMutation;
+import com.github.ptracker.app.CreateWateringEventMutation;
+import com.github.ptracker.app.GetGardenPlantQuery;
 import com.github.ptracker.app.util.ApolloClientCallback;
+import com.github.ptracker.common.EventMetadata;
+import com.github.ptracker.entity.FertilizationEvent;
 import com.github.ptracker.entity.GardenPlant;
+import com.github.ptracker.entity.OtherEvent;
 import com.github.ptracker.entity.Plant;
-import java.util.Collections;
+import com.github.ptracker.entity.WateringEvent;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.github.ptracker.app.entity.VerifierUtils.*;
+import static com.github.ptracker.app.util.VerifierUtils.*;
 import static com.google.common.base.Preconditions.*;
 
 
@@ -29,7 +37,7 @@ public class DecoratedGardenPlant {
 
   DecoratedGardenPlant(ApolloClient graphQLClient, String id, DecoratedGarden parentGarden) {
     _graphQLClient = checkNotNull(graphQLClient, "graphQLClient cannot be null");
-    _id = verifyStringFieldNotNullOrEmpty(id, "GardenPlant ID cannot be empty");
+    _id = verifyStringNotNullOrEmpty(id, "GardenPlant ID cannot be empty");
     _parentGarden = checkNotNull(parentGarden, "Gardener cannot be null");
   }
 
@@ -71,7 +79,53 @@ public class DecoratedGardenPlant {
     return _otherEvents;
   }
 
-  void populate() {
+  public void logWatering(WateringEvent event) {
+    populate();
+    EventMetadata metadata = getMetadata(event.getMetadata());
+    ApolloClientCallback<CreateWateringEventMutation.Data, CreateWateringEventMutation.CreateWateringEvent> callback =
+        new ApolloClientCallback<>(CreateWateringEventMutation.Data::createWateringEvent);
+    _graphQLClient.mutate(
+        new CreateWateringEventMutation(event.getQuantityMl(), _id, metadata.getGardenerId(), metadata.getTimestamp(),
+            Input.fromNullable(metadata.getComment()))).enqueue(callback);
+    CreateWateringEventMutation.CreateWateringEvent createWateringEvent =
+        callback.getNonNullOrThrow(10, TimeUnit.SECONDS);
+    if (createWateringEvent.id() == null) {
+      throw new IllegalStateException("No id returned on creation of event!");
+    }
+    _wateringEvents.add(new DecoratedWateringEvent(_graphQLClient, createWateringEvent.id(), this));
+  }
+
+  public void logFertilization(FertilizationEvent event) {
+    populate();
+    EventMetadata metadata = getMetadata(event.getMetadata());
+    ApolloClientCallback<CreateFertilizationEventMutation.Data, CreateFertilizationEventMutation.CreateFertilizationEvent>
+        callback = new ApolloClientCallback<>(CreateFertilizationEventMutation.Data::createFertilizationEvent);
+    _graphQLClient.mutate(new CreateFertilizationEventMutation(event.getQuantityMg(), _id, metadata.getGardenerId(),
+        metadata.getTimestamp(), Input.fromNullable(metadata.getComment()))).enqueue(callback);
+    CreateFertilizationEventMutation.CreateFertilizationEvent createFertilizationEvent =
+        callback.getNonNullOrThrow(10, TimeUnit.SECONDS);
+    if (createFertilizationEvent.id() == null) {
+      throw new IllegalStateException("No id returned on creation of event!");
+    }
+    _fertilizationEvents.add(new DecoratedFertilizationEvent(_graphQLClient, createFertilizationEvent.id(), this));
+  }
+
+  public void addNote(OtherEvent event) {
+    populate();
+    EventMetadata metadata = getMetadata(event.getMetadata());
+    ApolloClientCallback<CreateOtherEventMutation.Data, CreateOtherEventMutation.CreateOtherEvent> callback =
+        new ApolloClientCallback<>(CreateOtherEventMutation.Data::createOtherEvent);
+    _graphQLClient.mutate(
+        new CreateOtherEventMutation(event.getDescription(), _id, metadata.getGardenerId(), metadata.getTimestamp(),
+            Input.fromNullable(metadata.getComment()))).enqueue(callback);
+    CreateOtherEventMutation.CreateOtherEvent createOtherEvent = callback.getNonNullOrThrow(10, TimeUnit.SECONDS);
+    if (createOtherEvent.id() == null) {
+      throw new IllegalStateException("No id returned on creation of event!");
+    }
+    _otherEvents.add(new DecoratedOtherEvent(_graphQLClient, createOtherEvent.id(), this));
+  }
+
+  private void populate() {
     if (_gardenPlant == null) {
       synchronized (this) {
         if (_gardenPlant == null) {
@@ -91,26 +145,32 @@ public class DecoratedGardenPlant {
               .setPlantId(_displayPlant.getId())
               .build();
           _plant = new DecoratedPlant(_graphQLClient, _displayPlant.getId());
-          _wateringEvents = getGardenPlant.wateringEvents() == null
-              ? Collections.emptyList()
+          _wateringEvents = getGardenPlant.wateringEvents() == null ? new ArrayList<>()
               : getGardenPlant.wateringEvents()
                   .stream()
                   .map(event -> new DecoratedWateringEvent(_graphQLClient, event.id(), this))
-                  .collect(Collectors.toList());
-          _fertilizationEvents = getGardenPlant.fertilizationEvents() == null
-              ? Collections.emptyList()
+                  .collect(Collectors.toCollection(ArrayList::new));
+          _fertilizationEvents = getGardenPlant.fertilizationEvents() == null ? new ArrayList<>()
               : getGardenPlant.fertilizationEvents()
                   .stream()
                   .map(event -> new DecoratedFertilizationEvent(_graphQLClient, event.id(), this))
-                  .collect(Collectors.toList());
-          _otherEvents = getGardenPlant.otherEvents() == null
-              ? Collections.emptyList()
-              : getGardenPlant.otherEvents()
-                  .stream()
-                  .map(event -> new DecoratedOtherEvent(_graphQLClient, event.id(), this))
-                  .collect(Collectors.toList());
+                  .collect(Collectors.toCollection(ArrayList::new));
+          _otherEvents = getGardenPlant.otherEvents() == null ? new ArrayList<>() : getGardenPlant.otherEvents()
+              .stream()
+              .map(event -> new DecoratedOtherEvent(_graphQLClient, event.id(), this))
+              .collect(Collectors.toCollection(ArrayList::new));
         }
       }
     }
+  }
+
+  private EventMetadata getMetadata(EventMetadata prototype) {
+    EventMetadata.Builder metadataBuilder =
+        prototype != null ? EventMetadata.newBuilder(prototype) : EventMetadata.newBuilder();
+    if (metadataBuilder.getTimestamp() <= 0) {
+      metadataBuilder.setTimestamp(System.currentTimeMillis());
+    }
+    metadataBuilder.setGardenerId(_parentGarden.getParentAccount().getGardener().getId());
+    return metadataBuilder.build();
   }
 }

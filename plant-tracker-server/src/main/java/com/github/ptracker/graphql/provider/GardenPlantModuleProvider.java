@@ -182,7 +182,7 @@ public class GardenPlantModuleProvider implements GraphQLModuleProvider {
   }
 
   private static class SchemaModuleImpl extends SchemaModule {
-    private static final String ID_PREFIX = "ptracker:account:";
+    private static final String ID_PREFIX = "ptracker:gardenplant:";
     private final IdGenerator<String> _idGenerator = new RandomStringIdGenerator(ID_PREFIX);
 
     @Query("getGardenPlant")
@@ -233,21 +233,21 @@ public class GardenPlantModuleProvider implements GraphQLModuleProvider {
     ListenableFuture<List<FertilizationEvent>> gardenPlantToFertilizationEvents(GardenPlant gardenPlant,
         DataFetchingEnvironment environment) {
       return FutureConverter.toListenableFuture(
-          FertilizationEventModuleProvider.getFertilizationEventByGardenerId(environment, gardenPlant.getId()));
+          FertilizationEventModuleProvider.getFertilizationEventsByGardenPlantId(environment, gardenPlant.getId()));
     }
 
     @SchemaModification(addField = "wateringEvents", onType = GardenPlant.class)
     ListenableFuture<List<WateringEvent>> gardenPlantToWateringEvents(GardenPlant gardenPlant,
         DataFetchingEnvironment environment) {
       return FutureConverter.toListenableFuture(
-          WateringEventModuleProvider.getWateringEventByGardenerId(environment, gardenPlant.getId()));
+          WateringEventModuleProvider.getWateringEventsByGardenPlantId(environment, gardenPlant.getId()));
     }
 
     @SchemaModification(addField = "otherEvents", onType = GardenPlant.class)
     ListenableFuture<List<OtherEvent>> gardenPlantToOtherEvents(GardenPlant gardenPlant,
         DataFetchingEnvironment environment) {
       return FutureConverter.toListenableFuture(
-          OtherEventModuleProvider.getOtherEventByGardenerId(environment, gardenPlant.getId()));
+          OtherEventModuleProvider.getOtherEventsByGardenPlantId(environment, gardenPlant.getId()));
     }
   }
 }

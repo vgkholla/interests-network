@@ -21,7 +21,7 @@ apollo {
     graphqlSourceDirectorySet.srcDirs += "$projectDir/src/main/graphql/com/github/ptracker/app"
     graphqlSourceDirectorySet.exclude("**/*.json")
     graphqlSourceDirectorySet.exclude("**/*.graphqlconfig")
-    rootPackageName.set("com.gitgub.ptracker.app")
+    rootPackageName.set("com.github.ptracker.app")
     customTypeMapping = [
         "Long" : "java.lang.Long"
     ]

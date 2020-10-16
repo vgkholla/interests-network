@@ -25,6 +25,7 @@ public class ApolloClientCallback<RESPONSE_TYPE, OUTPUT_TYPE> extends ApolloCall
   @Override
   public void onResponse(@NotNull Response<RESPONSE_TYPE> response) {
     if (response.hasErrors()) {
+      // TODO: errors need to be stringified
       _future.completeExceptionally(new IllegalStateException("Encountered errors: " + response.getErrors()));
     } else if (response.getData() == null) {
       _future.complete(null);

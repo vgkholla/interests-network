@@ -1,9 +1,9 @@
 mutation createOtherEvent($description: String!, $gardenPlantId: String!, $gardenerId: String!, $timestamp: Long!, $comment: String) {
     createOtherEvent(input: { otherEvent: {
         description: $description,
-        gardenPlantId: $gardenPlantId,
+        garden_plant_id: $gardenPlantId,
         metadata: {
-            gardenerId: $gardenerId,
+            gardener_id: $gardenerId,
             timestamp: $timestamp,
             comment: $comment
         }

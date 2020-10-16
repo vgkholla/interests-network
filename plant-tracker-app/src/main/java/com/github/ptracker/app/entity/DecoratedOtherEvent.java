@@ -1,14 +1,14 @@
 package com.github.ptracker.app.entity;
 
 import com.apollographql.apollo.ApolloClient;
-import com.gitgub.ptracker.app.GetOtherEventQuery;
+import com.github.ptracker.app.GetOtherEventQuery;
 import com.github.ptracker.app.util.ApolloClientCallback;
 import com.github.ptracker.common.EventMetadata;
 import com.github.ptracker.entity.Gardener;
 import com.github.ptracker.entity.OtherEvent;
 import java.util.concurrent.TimeUnit;
 
-import static com.github.ptracker.app.entity.VerifierUtils.*;
+import static com.github.ptracker.app.util.VerifierUtils.*;
 import static com.google.common.base.Preconditions.*;
 
 
@@ -23,7 +23,7 @@ public class DecoratedOtherEvent {
 
   DecoratedOtherEvent(ApolloClient graphQLClient, String eventId, DecoratedGardenPlant parentGardenPlant) {
     _graphQLClient = checkNotNull(graphQLClient, "graphQLClient cannot be null");
-    _eventId = verifyStringFieldNotNullOrEmpty(eventId, "Event ID cannot be empty");
+    _eventId = verifyStringNotNullOrEmpty(eventId, "Event ID cannot be empty");
     _parentGardenPlant = checkNotNull(parentGardenPlant, "Garden Plant cannot be null");
   }
 

@@ -1,16 +1,17 @@
 package com.github.ptracker.app.entity;
 
 import com.apollographql.apollo.ApolloClient;
-import com.gitgub.ptracker.app.GetGardenQuery;
+import com.github.ptracker.app.CreateGardenPlantMutation;
+import com.github.ptracker.app.GetGardenQuery;
 import com.github.ptracker.app.util.ApolloClientCallback;
 import com.github.ptracker.entity.Garden;
 import com.github.ptracker.entity.GardenPlant;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.github.ptracker.app.entity.VerifierUtils.*;
+import static com.github.ptracker.app.util.VerifierUtils.*;
 import static com.google.common.base.Preconditions.*;
 
 
@@ -25,7 +26,7 @@ public class DecoratedGarden {
 
   DecoratedGarden(ApolloClient graphQLClient, String id, DecoratedAccount account) {
     _graphQLClient = checkNotNull(graphQLClient, "graphQLClient cannot be null");
-    _id = verifyStringFieldNotNullOrEmpty(id, "Garden ID cannot be empty");
+    _id = verifyStringNotNullOrEmpty(id, "Garden ID cannot be empty");
     _parentAccount = checkNotNull(account, "Account cannot be null");
   }
 
@@ -52,6 +53,22 @@ public class DecoratedGarden {
     return _gardenPlants;
   }
 
+  public void addGardenPlant(GardenPlant gardenPlant) {
+    populate();
+    ApolloClientCallback<CreateGardenPlantMutation.Data, CreateGardenPlantMutation.CreateGardenPlant> callback =
+        new ApolloClientCallback<>(CreateGardenPlantMutation.Data::createGardenPlant);
+    _graphQLClient.mutate(new CreateGardenPlantMutation(gardenPlant.getName(), _id, gardenPlant.getPlantId()))
+        .enqueue(callback);
+    CreateGardenPlantMutation.CreateGardenPlant createGardenPlant = callback.getNonNullOrThrow(10, TimeUnit.SECONDS);
+    if (createGardenPlant.id() == null) {
+      throw new IllegalStateException("No id returned on creation of garden plant!");
+    }
+    GardenPlant gardenPlantWithId =
+        GardenPlant.newBuilder(gardenPlant).setId(createGardenPlant.id()).setGardenId(_id).build();
+    _displayGardenPlants.add(gardenPlantWithId);
+    _gardenPlants.add(new DecoratedGardenPlant(_graphQLClient, gardenPlantWithId.getId(), this));
+  }
+
   @Override
   public String toString() {
     return "DecoratedGarden{" + "_gardenId='" + _id + '\'' + ", _parentAccount=" + _parentAccount + '}';
@@ -70,17 +87,17 @@ public class DecoratedGarden {
           }
           _garden =
               Garden.newBuilder().setId(_id).setName(getGarden.name()).setAccountId(_parentAccount.getId()).build();
-          _displayGardenPlants = getGarden.gardenPlants() == null ? Collections.emptyList() : getGarden.gardenPlants()
+          _displayGardenPlants = getGarden.gardenPlants() == null ? new ArrayList<>() : getGarden.gardenPlants()
               .stream()
               .map(gardenPlant -> GardenPlant.newBuilder()
                   .setId(gardenPlant.id())
                   .setName(gardenPlant.name())
                   .setGardenId(_id)
                   .build())
-              .collect(Collectors.toList());
+              .collect(Collectors.toCollection(ArrayList::new));
           _gardenPlants = _displayGardenPlants.stream()
               .map(gardenPlant -> new DecoratedGardenPlant(_graphQLClient, gardenPlant.getId(), this))
-              .collect(Collectors.toList());
+              .collect(Collectors.toCollection(ArrayList::new));
         }
       }
     }

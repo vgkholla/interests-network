@@ -1,12 +1,12 @@
 package com.github.ptracker.app.entity;
 
 import com.apollographql.apollo.ApolloClient;
-import com.gitgub.ptracker.app.GetPlantQuery;
+import com.github.ptracker.app.GetPlantQuery;
 import com.github.ptracker.app.util.ApolloClientCallback;
 import com.github.ptracker.entity.Plant;
 import java.util.concurrent.TimeUnit;
 
-import static com.github.ptracker.app.entity.VerifierUtils.*;
+import static com.github.ptracker.app.util.VerifierUtils.*;
 import static com.google.common.base.Preconditions.*;
 
 
@@ -19,7 +19,7 @@ public class DecoratedPlant {
 
   public DecoratedPlant(ApolloClient graphQLClient, String id) {
     _graphQLClient = checkNotNull(graphQLClient, "graphQLClient cannot be null");
-    _id = verifyStringFieldNotNullOrEmpty(id, "Plant ID cannot be empty");
+    _id = verifyStringNotNullOrEmpty(id, "Plant ID cannot be empty");
   }
 
   public String getId() {

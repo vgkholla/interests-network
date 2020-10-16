@@ -1,5 +1,5 @@
 # plant-tracker
-[![Build Status](https://travis-ci.com/vgkholla/interests-network.svg?token=xJUBNqLxdQWLRs7Mz3ya&branch=master)](https://travis-ci.com/vgkholla/interests-network)
+[![Build Status](https://travis-ci.com/vgkholla/plant-tracker.svg?branch=master)](https://travis-ci.com/vgkholla/plant-tracker)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/56437f45d4934e95b9e85589e853f657)](https://www.codacy.com/manual/vgkholla/interests-network?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=vgkholla/interests-network&amp;utm_campaign=Badge_Grade)
 
 Playing with CosmosDB and GraphQL

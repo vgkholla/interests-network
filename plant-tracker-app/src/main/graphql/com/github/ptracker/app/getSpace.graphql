@@ -1,5 +1,5 @@
-query getAccount($id: String!) {
-    getAccount(input: { id: $id }) {
+query getSpace($id: String!) {
+    getSpace(input: { id: $id }) {
         id
         name
         gardens {

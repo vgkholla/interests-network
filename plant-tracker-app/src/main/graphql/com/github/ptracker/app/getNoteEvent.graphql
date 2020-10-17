@@ -1,5 +1,5 @@
-query getOtherEvent($id: String!) {
-    getOtherEvent(input: { id: $id }) {
+query getNoteEvent($id: String!) {
+    getNoteEvent(input: { id: $id }) {
         id
         description
         metadata {

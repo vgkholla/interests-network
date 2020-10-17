@@ -3,7 +3,7 @@ package com.github.ptracker.server;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.github.ptracker.account.AccountServer;
+import com.github.ptracker.space.SpaceServer;
 import com.github.ptracker.common.storage.StorageMetadata;
 import com.github.ptracker.entity.Plant;
 import com.github.ptracker.fertilizationevent.FertilizationEventServer;
@@ -12,17 +12,17 @@ import com.github.ptracker.gardener.GardenerServer;
 import com.github.ptracker.gardenplant.GardenPlantServer;
 import com.github.ptracker.graphql.GraphQLServer;
 import com.github.ptracker.graphql.api.GraphQLModuleProvider;
-import com.github.ptracker.graphql.provider.AccountModuleProvider;
+import com.github.ptracker.graphql.provider.SpaceModuleProvider;
 import com.github.ptracker.graphql.provider.EventMetadataModuleProvider;
 import com.github.ptracker.graphql.provider.FertilizationEventModuleProvider;
 import com.github.ptracker.graphql.provider.FullGraphProvider;
 import com.github.ptracker.graphql.provider.GardenModuleProvider;
 import com.github.ptracker.graphql.provider.GardenPlantModuleProvider;
 import com.github.ptracker.graphql.provider.GardenerModuleProvider;
-import com.github.ptracker.graphql.provider.OtherEventModuleProvider;
+import com.github.ptracker.graphql.provider.NoteEventModuleProvider;
 import com.github.ptracker.graphql.provider.PlantModuleProvider;
 import com.github.ptracker.graphql.provider.WateringEventModuleProvider;
-import com.github.ptracker.otherevent.OtherEventServer;
+import com.github.ptracker.noteevent.NoteEventServer;
 import com.github.ptracker.plant.PlantClient;
 import com.github.ptracker.plant.PlantServer;
 import com.github.ptracker.resource.CreateRequestOptionsImpl;
@@ -70,12 +70,12 @@ public class PlantTrackerServer implements StartStopService {
 
   // ports
   private static final int GRAPHQL_SERVER_PORT = 8080;
-  private static final int ACCOUNT_SERVICE_PORT = 30000;
+  private static final int SPACE_SERVICE_PORT = 30000;
   private static final int FERTILIZATION_EVENT_SERVICE_PORT = 30001;
   private static final int GARDEN_SERVICE_PORT = 30002;
   private static final int GARDENER_SERVICE_PORT = 30003;
   private static final int GARDEN_PLANT_SERVICE_PORT = 30004;
-  private static final int OTHER_EVENT_SERVICE_PORT = 30005;
+  private static final int NOTE_EVENT_SERVICE_PORT = 30005;
   private static final int PLANT_SERVICE_PORT = 30006;
   private static final int WATERING_EVENT_SERVICE_PORT = 30007;
 
@@ -166,12 +166,12 @@ public class PlantTrackerServer implements StartStopService {
 
   private void createServices() {
     // servers
-    _services.add(new AccountServer(ACCOUNT_SERVICE_PORT, _cosmosClient));
+    _services.add(new SpaceServer(SPACE_SERVICE_PORT, _cosmosClient));
     _services.add(new FertilizationEventServer(FERTILIZATION_EVENT_SERVICE_PORT, _cosmosClient));
     _services.add(new GardenServer(GARDEN_SERVICE_PORT, _cosmosClient));
     _services.add(new GardenerServer(GARDENER_SERVICE_PORT, _cosmosClient));
     _services.add(new GardenPlantServer(GARDEN_PLANT_SERVICE_PORT, _cosmosClient));
-    _services.add(new OtherEventServer(OTHER_EVENT_SERVICE_PORT, _cosmosClient));
+    _services.add(new NoteEventServer(NOTE_EVENT_SERVICE_PORT, _cosmosClient));
     _services.add(new PlantServer(PLANT_SERVICE_PORT, _cosmosClient));
     _services.add(new WateringEventServer(WATERING_EVENT_SERVICE_PORT, _cosmosClient));
 
@@ -180,12 +180,12 @@ public class PlantTrackerServer implements StartStopService {
       List<GraphQLModuleProvider> moduleProviders = new ArrayList<>();
 
       // entitites
-      moduleProviders.add(new AccountModuleProvider("localhost", ACCOUNT_SERVICE_PORT));
+      moduleProviders.add(new SpaceModuleProvider("localhost", SPACE_SERVICE_PORT));
       moduleProviders.add(new FertilizationEventModuleProvider("localhost", FERTILIZATION_EVENT_SERVICE_PORT));
       moduleProviders.add(new GardenModuleProvider("localhost", GARDEN_SERVICE_PORT));
       moduleProviders.add(new GardenerModuleProvider("localhost", GARDENER_SERVICE_PORT));
       moduleProviders.add(new GardenPlantModuleProvider("localhost", GARDEN_PLANT_SERVICE_PORT));
-      moduleProviders.add(new OtherEventModuleProvider("localhost", OTHER_EVENT_SERVICE_PORT));
+      moduleProviders.add(new NoteEventModuleProvider("localhost", NOTE_EVENT_SERVICE_PORT));
       moduleProviders.add(new PlantModuleProvider("localhost", PLANT_SERVICE_PORT));
       moduleProviders.add(new WateringEventModuleProvider("localhost", WATERING_EVENT_SERVICE_PORT));
 

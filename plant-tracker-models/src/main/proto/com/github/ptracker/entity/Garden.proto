@@ -12,5 +12,5 @@ message Garden {
 
   string name = 2;
 
-  string account_id = 3;
+  string space_id = 3;
 }

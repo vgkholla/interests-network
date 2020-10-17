@@ -27,7 +27,7 @@ public class GardenServer extends GrpcServer {
   private static void verifyGarden(Garden garden) {
     verifyStringFieldNotNullOrEmpty(garden.getId(), Garden.class.getName(), "id");
     verifyStringFieldNotNullOrEmpty(garden.getName(), Garden.class.getName(), "name");
-    verifyStringFieldNotNullOrEmpty(garden.getAccountId(), Garden.class.getName(), "accountId");
+    verifyStringFieldNotNullOrEmpty(garden.getSpaceId(), Garden.class.getName(), "spaceId");
   }
 
   private static Resource<String, Garden> getCosmosResource(CosmosClient cosmosClient) {

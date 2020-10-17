@@ -3,14 +3,14 @@ package com.github.ptracker.app.entity;
 import com.apollographql.apollo.ApolloClient;
 import com.apollographql.apollo.api.Input;
 import com.github.ptracker.app.CreateFertilizationEventMutation;
-import com.github.ptracker.app.CreateOtherEventMutation;
+import com.github.ptracker.app.CreateNoteEventMutation;
 import com.github.ptracker.app.CreateWateringEventMutation;
 import com.github.ptracker.app.GetGardenPlantQuery;
 import com.github.ptracker.app.util.ApolloClientCallback;
 import com.github.ptracker.common.EventMetadata;
 import com.github.ptracker.entity.FertilizationEvent;
 import com.github.ptracker.entity.GardenPlant;
-import com.github.ptracker.entity.OtherEvent;
+import com.github.ptracker.entity.NoteEvent;
 import com.github.ptracker.entity.Plant;
 import com.github.ptracker.entity.WateringEvent;
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ public class DecoratedGardenPlant {
   private DecoratedPlant _plant;
   private List<DecoratedWateringEvent> _wateringEvents;
   private List<DecoratedFertilizationEvent> _fertilizationEvents;
-  private List<DecoratedOtherEvent> _otherEvents;
+  private List<DecoratedNoteEvent> _noteEvents;
 
   DecoratedGardenPlant(ApolloClient graphQLClient, String id, DecoratedGarden parentGarden) {
     _graphQLClient = checkNotNull(graphQLClient, "graphQLClient cannot be null");
@@ -74,9 +74,9 @@ public class DecoratedGardenPlant {
     return _fertilizationEvents;
   }
 
-  public List<DecoratedOtherEvent> getOtherEvents() {
+  public List<DecoratedNoteEvent> getNoteEvents() {
     populate();
-    return _otherEvents;
+    return _noteEvents;
   }
 
   public void logWatering(WateringEvent event) {
@@ -110,19 +110,19 @@ public class DecoratedGardenPlant {
     _fertilizationEvents.add(new DecoratedFertilizationEvent(_graphQLClient, createFertilizationEvent.id(), this));
   }
 
-  public void addNote(OtherEvent event) {
+  public void addNote(NoteEvent event) {
     populate();
     EventMetadata metadata = getMetadata(event.getMetadata());
-    ApolloClientCallback<CreateOtherEventMutation.Data, CreateOtherEventMutation.CreateOtherEvent> callback =
-        new ApolloClientCallback<>(CreateOtherEventMutation.Data::createOtherEvent);
+    ApolloClientCallback<CreateNoteEventMutation.Data, CreateNoteEventMutation.CreateNoteEvent> callback =
+        new ApolloClientCallback<>(CreateNoteEventMutation.Data::createNoteEvent);
     _graphQLClient.mutate(
-        new CreateOtherEventMutation(event.getDescription(), _id, metadata.getGardenerId(), metadata.getTimestamp(),
+        new CreateNoteEventMutation(event.getDescription(), _id, metadata.getGardenerId(), metadata.getTimestamp(),
             Input.fromNullable(metadata.getComment()))).enqueue(callback);
-    CreateOtherEventMutation.CreateOtherEvent createOtherEvent = callback.getNonNullOrThrow(10, TimeUnit.SECONDS);
-    if (createOtherEvent.id() == null) {
+    CreateNoteEventMutation.CreateNoteEvent createNoteEvent = callback.getNonNullOrThrow(10, TimeUnit.SECONDS);
+    if (createNoteEvent.id() == null) {
       throw new IllegalStateException("No id returned on creation of event!");
     }
-    _otherEvents.add(new DecoratedOtherEvent(_graphQLClient, createOtherEvent.id(), this));
+    _noteEvents.add(new DecoratedNoteEvent(_graphQLClient, createNoteEvent.id(), this));
   }
 
   private void populate() {
@@ -155,9 +155,9 @@ public class DecoratedGardenPlant {
                   .stream()
                   .map(event -> new DecoratedFertilizationEvent(_graphQLClient, event.id(), this))
                   .collect(Collectors.toCollection(ArrayList::new));
-          _otherEvents = getGardenPlant.otherEvents() == null ? new ArrayList<>() : getGardenPlant.otherEvents()
+          _noteEvents = getGardenPlant.noteEvents() == null ? new ArrayList<>() : getGardenPlant.noteEvents()
               .stream()
-              .map(event -> new DecoratedOtherEvent(_graphQLClient, event.id(), this))
+              .map(event -> new DecoratedNoteEvent(_graphQLClient, event.id(), this))
               .collect(Collectors.toCollection(ArrayList::new));
         }
       }
@@ -170,7 +170,7 @@ public class DecoratedGardenPlant {
     if (metadataBuilder.getTimestamp() <= 0) {
       metadataBuilder.setTimestamp(System.currentTimeMillis());
     }
-    metadataBuilder.setGardenerId(_parentGarden.getParentAccount().getGardener().getId());
+    metadataBuilder.setGardenerId(_parentGarden.getParentSpace().getGardener().getId());
     return metadataBuilder.build();
   }
 }

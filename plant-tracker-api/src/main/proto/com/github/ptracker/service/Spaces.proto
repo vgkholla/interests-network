@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.github.ptracker.service";
+option java_outer_classname = "SpaceProto";
+
+package com.github.ptracker.service;
+
+import "com/github/ptracker/entity/Space.proto";
+
+service Space {
+
+  rpc get(SpaceGetRequest) returns (SpaceGetResponse) {}
+
+  rpc query(SpaceQueryRequest) returns (SpaceQueryResponse) {}
+
+  rpc create(SpaceCreateRequest) returns (SpaceCreateResponse) {}
+
+  rpc update(SpaceUpdateRequest) returns (SpaceUpdateResponse) {}
+
+  rpc delete(SpaceDeleteRequest) returns (SpaceDeleteResponse) {}
+}
+
+message SpaceGetRequest {
+  string id = 1;
+}
+
+message SpaceGetResponse {
+  com.github.ptracker.entity.Space space = 1;
+}
+
+message SpaceQueryRequest {
+  com.github.ptracker.entity.Space template = 1;
+}
+
+message SpaceQueryResponse {
+  repeated com.github.ptracker.entity.Space space = 1;
+}
+
+message SpaceCreateRequest {
+  com.github.ptracker.entity.Space space = 1;
+}
+
+message SpaceCreateResponse {
+}
+
+message SpaceUpdateRequest {
+  com.github.ptracker.entity.Space space = 1;
+  bool should_upsert = 2;
+}
+
+message SpaceUpdateResponse {
+}
+
+message SpaceDeleteRequest {
+  string id = 1;
+}
+
+message SpaceDeleteResponse {
+}

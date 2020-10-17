@@ -1,9 +1,9 @@
 package com.github.ptracker.app.entity;
 
 import com.apollographql.apollo.ApolloClient;
-import com.github.ptracker.app.GetAccountQuery;
+import com.github.ptracker.app.GetSpaceQuery;
 import com.github.ptracker.app.util.ApolloClientCallback;
-import com.github.ptracker.entity.Account;
+import com.github.ptracker.entity.Space;
 import com.github.ptracker.entity.Garden;
 import java.util.Collections;
 import java.util.List;
@@ -14,18 +14,18 @@ import static com.github.ptracker.app.util.VerifierUtils.*;
 import static com.google.common.base.Preconditions.*;
 
 
-public class DecoratedAccount {
+public class DecoratedSpace {
   private final ApolloClient _graphQLClient;
   private final String _id;
   private final DecoratedGardener _gardener;
 
-  private Account _account;
+  private Space _space;
   private List<Garden> _displayGardens;
   private List<DecoratedGarden> _gardens;
 
-  public DecoratedAccount(ApolloClient graphQLClient, String id, DecoratedGardener gardener) {
+  public DecoratedSpace(ApolloClient graphQLClient, String id, DecoratedGardener gardener) {
     _graphQLClient = checkNotNull(graphQLClient, "graphQLClient cannot be null");
-    _id = verifyStringNotNullOrEmpty(id, "Account ID cannot be empty");
+    _id = verifyStringNotNullOrEmpty(id, "Space ID cannot be empty");
     _gardener = checkNotNull(gardener, "Gardener cannot be null");
   }
 
@@ -33,9 +33,9 @@ public class DecoratedAccount {
     return _id;
   }
 
-  public Account getAccount() {
+  public Space getSpace() {
     populate();
-    return _account;
+    return _space;
   }
 
   public DecoratedGardener getGardener() {
@@ -53,27 +53,27 @@ public class DecoratedAccount {
 
   @Override
   public String toString() {
-    return "DecoratedAccount{" + "_accountId='" + _id + '\'' + ", _gardener=" + _gardener + '}';
+    return "DecoratedSpace{" + "_spaceId='" + _id + '\'' + ", _gardener=" + _gardener + '}';
   }
 
   private void populate() {
-    if (_account == null) {
+    if (_space == null) {
       synchronized (this) {
-        if (_account == null) {
-          ApolloClientCallback<GetAccountQuery.Data, GetAccountQuery.GetAccount> callback =
-              new ApolloClientCallback<>(GetAccountQuery.Data::getAccount);
-          _graphQLClient.query(new GetAccountQuery(_id)).enqueue(callback);
-          GetAccountQuery.GetAccount getAccount = callback.getNonNullOrThrow(10, TimeUnit.SECONDS);
-          if (getAccount.id() == null) {
-            throw new IllegalStateException("Could not find account with ID: " + _id);
+        if (_space == null) {
+          ApolloClientCallback<GetSpaceQuery.Data, GetSpaceQuery.GetSpace> callback =
+              new ApolloClientCallback<>(GetSpaceQuery.Data::getSpace);
+          _graphQLClient.query(new GetSpaceQuery(_id)).enqueue(callback);
+          GetSpaceQuery.GetSpace getSpace = callback.getNonNullOrThrow(10, TimeUnit.SECONDS);
+          if (getSpace.id() == null) {
+            throw new IllegalStateException("Could not find space with ID: " + _id);
           }
-          _account = Account.newBuilder().setId(_id).setName(getAccount.name()).build();
-          _displayGardens = getAccount.gardens() == null ? Collections.emptyList() : getAccount.gardens()
+          _space = Space.newBuilder().setId(_id).setName(getSpace.name()).build();
+          _displayGardens = getSpace.gardens() == null ? Collections.emptyList() : getSpace.gardens()
               .stream()
               .map(garden -> Garden.newBuilder()
                   .setId(garden.id())
                   .setName(garden.name())
-                  .setAccountId(_id)
+                  .setSpaceId(_id)
                   .build())
               .collect(Collectors.toList());
           _gardens = _displayGardens.stream()

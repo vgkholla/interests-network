@@ -18,24 +18,24 @@ import static com.google.common.base.Preconditions.*;
 public class DecoratedGarden {
   private final ApolloClient _graphQLClient;
   private final String _id;
-  private final DecoratedAccount _parentAccount;
+  private final DecoratedSpace _parentSpace;
 
   private Garden _garden;
   private List<GardenPlant> _displayGardenPlants;
   private List<DecoratedGardenPlant> _gardenPlants;
 
-  DecoratedGarden(ApolloClient graphQLClient, String id, DecoratedAccount account) {
+  DecoratedGarden(ApolloClient graphQLClient, String id, DecoratedSpace space) {
     _graphQLClient = checkNotNull(graphQLClient, "graphQLClient cannot be null");
     _id = verifyStringNotNullOrEmpty(id, "Garden ID cannot be empty");
-    _parentAccount = checkNotNull(account, "Account cannot be null");
+    _parentSpace = checkNotNull(space, "Space cannot be null");
   }
 
   public String getId() {
     return _id;
   }
 
-  public DecoratedAccount getParentAccount() {
-    return _parentAccount;
+  public DecoratedSpace getParentSpace() {
+    return _parentSpace;
   }
 
   public Garden getGarden() {
@@ -71,7 +71,7 @@ public class DecoratedGarden {
 
   @Override
   public String toString() {
-    return "DecoratedGarden{" + "_gardenId='" + _id + '\'' + ", _parentAccount=" + _parentAccount + '}';
+    return "DecoratedGarden{" + "_gardenId='" + _id + '\'' + ", _parentSpace=" + _parentSpace + '}';
   }
 
   private void populate() {
@@ -86,7 +86,7 @@ public class DecoratedGarden {
             throw new IllegalStateException("Could not find garden with ID: " + _id);
           }
           _garden =
-              Garden.newBuilder().setId(_id).setName(getGarden.name()).setAccountId(_parentAccount.getId()).build();
+              Garden.newBuilder().setId(_id).setName(getGarden.name()).setSpaceId(_parentSpace.getId()).build();
           _displayGardenPlants = getGarden.gardenPlants() == null ? new ArrayList<>() : getGarden.gardenPlants()
               .stream()
               .map(gardenPlant -> GardenPlant.newBuilder()

@@ -1,8 +1,8 @@
-query fullQuery($accountId: String!){
-    getAccount(input: {id: $accountId}) {
+query fullQuery($spaceId: String!){
+    getSpace(input: {id: $spaceId}) {
         name
         gardens {
-            account {
+            space {
                 name
             }
             name
@@ -45,12 +45,12 @@ query fullQuery($accountId: String!){
                         name
                     }
                 }
-                otherEvents {
+                noteEvents {
                     description
                     metadata {
                         gardener {
                             firstName
-                            otherGardenPlantEvents {
+                            gardenPlantNoteEvents {
                                 description
                             }
                         }

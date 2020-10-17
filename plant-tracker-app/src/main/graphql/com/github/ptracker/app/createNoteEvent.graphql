@@ -1,5 +1,5 @@
-mutation createOtherEvent($description: String!, $gardenPlantId: String!, $gardenerId: String!, $timestamp: Long!, $comment: String) {
-    createOtherEvent(input: { otherEvent: {
+mutation createNoteEvent($description: String!, $gardenPlantId: String!, $gardenerId: String!, $timestamp: Long!, $comment: String) {
+    createNoteEvent(input: { noteEvent: {
         description: $description,
         garden_plant_id: $gardenPlantId,
         metadata: {

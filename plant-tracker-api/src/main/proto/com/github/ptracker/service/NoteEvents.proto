@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.github.ptracker.service";
+option java_outer_classname = "NoteEventProto";
+
+package com.github.ptracker.service;
+
+import "com/github/ptracker/entity/NoteEvent.proto";
+
+service NoteEvent {
+
+  rpc get(NoteEventGetRequest) returns (NoteEventGetResponse) {}
+
+  rpc query(NoteEventQueryRequest) returns (NoteEventQueryResponse) {}
+
+  rpc create(NoteEventCreateRequest) returns (NoteEventCreateResponse) {}
+
+  rpc update(NoteEventUpdateRequest) returns (NoteEventUpdateResponse) {}
+
+  rpc delete(NoteEventDeleteRequest) returns (NoteEventDeleteResponse) {}
+}
+
+message NoteEventGetRequest {
+  string id = 1;
+}
+
+message NoteEventGetResponse {
+  com.github.ptracker.entity.NoteEvent noteEvent = 1;
+}
+
+message NoteEventQueryRequest {
+  com.github.ptracker.entity.NoteEvent template = 1;
+}
+
+message NoteEventQueryResponse {
+  repeated com.github.ptracker.entity.NoteEvent noteEvent = 1;
+}
+
+message NoteEventCreateRequest {
+  com.github.ptracker.entity.NoteEvent noteEvent = 1;
+}
+
+message NoteEventCreateResponse {
+}
+
+message NoteEventUpdateRequest {
+  com.github.ptracker.entity.NoteEvent noteEvent = 1;
+  bool should_upsert = 2;
+}
+
+message NoteEventUpdateResponse {
+}
+
+message NoteEventDeleteRequest {
+  string id = 1;
+}
+
+message NoteEventDeleteResponse {
+}

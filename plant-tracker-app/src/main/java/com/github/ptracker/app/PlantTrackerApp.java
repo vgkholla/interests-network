@@ -1,12 +1,12 @@
 package com.github.ptracker.app;
 
 import com.apollographql.apollo.ApolloClient;
-import com.github.ptracker.app.entity.DecoratedAccount;
+import com.github.ptracker.app.entity.DecoratedSpace;
 import com.github.ptracker.app.entity.DecoratedFertilizationEvent;
 import com.github.ptracker.app.entity.DecoratedGarden;
 import com.github.ptracker.app.entity.DecoratedGardenPlant;
 import com.github.ptracker.app.entity.DecoratedGardener;
-import com.github.ptracker.app.entity.DecoratedOtherEvent;
+import com.github.ptracker.app.entity.DecoratedNoteEvent;
 import com.github.ptracker.app.entity.DecoratedPlant;
 import com.github.ptracker.app.entity.DecoratedWateringEvent;
 import com.github.ptracker.app.util.Prompt;
@@ -15,7 +15,7 @@ import com.github.ptracker.entity.FertilizationEvent;
 import com.github.ptracker.entity.Garden;
 import com.github.ptracker.entity.GardenPlant;
 import com.github.ptracker.entity.Gardener;
-import com.github.ptracker.entity.OtherEvent;
+import com.github.ptracker.entity.NoteEvent;
 import com.github.ptracker.entity.WateringEvent;
 import java.util.Date;
 import java.util.List;
@@ -34,7 +34,7 @@ public class PlantTrackerApp {
   private static final String DEFAULT_GRAPHQL_SERVER_URL = "http://localhost:8080/graphql";
 
   private static final String DEFAULT_GARDENER_ID = "ptracker:gardener:1";
-  private static final String DEFAULT_ACCOUNT_ID = "ptracker:account:1";
+  private static final String DEFAULT_SPACE_ID = "ptracker:space:1";
   private static final String GENERIC_PLANT_ID = "ptracker:plant:1";
 
   public static void main(String[] args) throws Exception {
@@ -49,30 +49,30 @@ public class PlantTrackerApp {
     username = username == null || username.isEmpty() ? DEFAULT_GARDENER_ID : username;
     DecoratedGardener decoratedGardener = login(username, graphQLClient);
     prompt.push(decoratedGardener.getGardener().getFirstName());
-    System.out.print(prompt.prompt() + " Account [" + DEFAULT_ACCOUNT_ID + "]: ");
-    String account = scanner.nextLine();
-    account = account == null || account.isEmpty() ? DEFAULT_ACCOUNT_ID : account;
-    DecoratedAccount decoratedAccount = getAccount(account, decoratedGardener, graphQLClient);
-    prompt.push(decoratedAccount.getAccount().getName());
+    System.out.print(prompt.prompt() + " Space [" + DEFAULT_SPACE_ID + "]: ");
+    String space = scanner.nextLine();
+    space = space == null || space.isEmpty() ? DEFAULT_SPACE_ID : space;
+    DecoratedSpace decoratedSpace = getSpace(space, decoratedGardener, graphQLClient);
+    prompt.push(decoratedSpace.getSpace().getName());
     PlantCatalog plantCatalog = new PlantCatalog(graphQLClient, GENERIC_PLANT_ID);
-    onAccount(prompt, scanner, decoratedAccount, plantCatalog);
+    onSpace(prompt, scanner, decoratedSpace, plantCatalog);
     System.out.println("Buh-bye ! Come again!");
   }
 
-  private static void onAccount(Prompt prompt, Scanner scanner, DecoratedAccount account, PlantCatalog plantCatalog) {
-    List<Garden> displayGardens = account.getDisplayGardens();
+  private static void onSpace(Prompt prompt, Scanner scanner, DecoratedSpace space, PlantCatalog plantCatalog) {
+    List<Garden> displayGardens = space.getDisplayGardens();
     if (!displayGardens.isEmpty()) {
       int choice;
       do {
         System.out.println("Please select a Garden");
         choice = select(prompt, scanner, displayGardens, Garden::getName);
         if (choice >= 0) {
-          onGarden(prompt, scanner, displayGardens.get(choice).getName(), account.getGardens().get(choice),
+          onGarden(prompt, scanner, displayGardens.get(choice).getName(), space.getGardens().get(choice),
               plantCatalog);
         }
       } while (choice >= 0);
     } else {
-      System.out.println("There are no gardens in this account ! This app does not yet support creating gardens");
+      System.out.println("There are no gardens in this space ! This app does not yet support creating gardens");
     }
   }
 
@@ -164,8 +164,8 @@ public class PlantTrackerApp {
         case 2: {
           System.out.print(prompt.prompt() + " What note would you like to add?: ");
           String description = scanner.nextLine();
-          OtherEvent event =
-              OtherEvent.newBuilder().setDescription(description).setMetadata(getMetadata(prompt, scanner)).build();
+          NoteEvent event =
+              NoteEvent.newBuilder().setDescription(description).setMetadata(getMetadata(prompt, scanner)).build();
           gardenPlant.addNote(event);
           System.out.println("---Added note to \"" + gardenPlantName + "\"---");
           break;
@@ -192,9 +192,9 @@ public class PlantTrackerApp {
           break;
         case 5:
           System.out.println("---Notes---");
-          for (DecoratedOtherEvent otherEvent : gardenPlant.getOtherEvents()) {
-            OtherEvent oEvent = otherEvent.getEvent();
-            Gardener actor = otherEvent.getDisplayGardener();
+          for (DecoratedNoteEvent noteEvent : gardenPlant.getNoteEvents()) {
+            NoteEvent oEvent = noteEvent.getEvent();
+            Gardener actor = noteEvent.getDisplayGardener();
             System.out.println(formatLogEntry(oEvent.getMetadata().getTimestamp(),
                 actor.getFirstName() + " added a note - \"" + oEvent.getDescription() + "\""));
           }
@@ -294,7 +294,7 @@ public class PlantTrackerApp {
     return new DecoratedGardener(graphQLClient, gardenerId);
   }
 
-  private static DecoratedAccount getAccount(String accountID, DecoratedGardener gardener, ApolloClient graphQLClient) {
-    return new DecoratedAccount(graphQLClient, accountID, gardener);
+  private static DecoratedSpace getSpace(String spaceID, DecoratedGardener gardener, ApolloClient graphQLClient) {
+    return new DecoratedSpace(graphQLClient, spaceID, gardener);
   }
 }

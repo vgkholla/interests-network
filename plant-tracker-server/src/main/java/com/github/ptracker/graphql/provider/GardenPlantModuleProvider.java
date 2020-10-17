@@ -3,7 +3,7 @@ package com.github.ptracker.graphql.provider;
 import com.github.ptracker.entity.FertilizationEvent;
 import com.github.ptracker.entity.Garden;
 import com.github.ptracker.entity.GardenPlant;
-import com.github.ptracker.entity.OtherEvent;
+import com.github.ptracker.entity.NoteEvent;
 import com.github.ptracker.entity.Plant;
 import com.github.ptracker.entity.WateringEvent;
 import com.github.ptracker.graphql.GrpcNotFoundSwallower;
@@ -243,11 +243,11 @@ public class GardenPlantModuleProvider implements GraphQLModuleProvider {
           WateringEventModuleProvider.getWateringEventsByGardenPlantId(environment, gardenPlant.getId()));
     }
 
-    @SchemaModification(addField = "otherEvents", onType = GardenPlant.class)
-    ListenableFuture<List<OtherEvent>> gardenPlantToOtherEvents(GardenPlant gardenPlant,
+    @SchemaModification(addField = "noteEvents", onType = GardenPlant.class)
+    ListenableFuture<List<NoteEvent>> gardenPlantToNoteEvents(GardenPlant gardenPlant,
         DataFetchingEnvironment environment) {
       return FutureConverter.toListenableFuture(
-          OtherEventModuleProvider.getOtherEventsByGardenPlantId(environment, gardenPlant.getId()));
+          NoteEventModuleProvider.getNoteEventsByGardenPlantId(environment, gardenPlant.getId()));
     }
   }
 }

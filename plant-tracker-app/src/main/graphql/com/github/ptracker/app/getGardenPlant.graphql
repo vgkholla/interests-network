@@ -12,7 +12,7 @@ query getGardenPlant($id: String!) {
         wateringEvents {
             id
         }
-        otherEvents {
+        noteEvents {
             id
         }
     }

@@ -1,13 +1,13 @@
 package com.github.ptracker.app;
 
 import com.apollographql.apollo.ApolloClient;
-import com.github.ptracker.app.entity.DecoratedSpace;
 import com.github.ptracker.app.entity.DecoratedFertilizationEvent;
 import com.github.ptracker.app.entity.DecoratedGarden;
 import com.github.ptracker.app.entity.DecoratedGardenPlant;
 import com.github.ptracker.app.entity.DecoratedGardener;
 import com.github.ptracker.app.entity.DecoratedNoteEvent;
 import com.github.ptracker.app.entity.DecoratedPlant;
+import com.github.ptracker.app.entity.DecoratedSpace;
 import com.github.ptracker.app.entity.DecoratedWateringEvent;
 import com.github.ptracker.app.util.Prompt;
 import com.github.ptracker.common.EventMetadata;
@@ -67,8 +67,10 @@ public class PlantTrackerApp {
         System.out.println("Please select a Garden");
         choice = select(prompt, scanner, displayGardens, Garden::getName);
         if (choice >= 0) {
-          onGarden(prompt, scanner, displayGardens.get(choice).getName(), space.getGardens().get(choice),
-              plantCatalog);
+          String gardenName = displayGardens.get(choice).getName();
+          prompt.push(gardenName);
+          onGarden(prompt, scanner, gardenName, space.getGardens().get(choice), plantCatalog);
+          prompt.pop();
         }
       } while (choice >= 0);
     } else {
@@ -115,8 +117,10 @@ public class PlantTrackerApp {
         System.out.println("Please select a Garden Plant");
         choice = select(prompt, scanner, displayGardenPlants, GardenPlant::getName);
         if (choice >= 0) {
-          onGardenPlant(prompt, scanner, displayGardenPlants.get(choice).getName(),
-              garden.getGardenPlants().get(choice));
+          String gardenPlantName = displayGardenPlants.get(choice).getName();
+          prompt.push(gardenPlantName);
+          onGardenPlant(prompt, scanner, gardenPlantName, garden.getGardenPlants().get(choice));
+          prompt.pop();
         }
       } while (choice >= 0);
     }
